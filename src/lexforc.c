@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
   printf("      Token           Lexeme     Line#  Column#\n");
   while (tokenid = yylex()) {
     //printf("> TOKEN_ID: %d, YYLINE_NO: %d, COLUMN: %d, YYTEXT: %s\n", tokenid, yylineno, column, yytext);
-    printf("%12s %15s %7d %7d\n", getToken(tokenid), yytext, yylineno, column);
+    printf("%12s %15s %7d %7d\n", getToken(tokenid), yytext, yylineno, column-(int)strlen(yytext)+1);
   }
   return 0;
 }

@@ -13,6 +13,7 @@ void count();
 %}
 
 %%
+"//"      { singlecomment(); }
 "/*"			{ comment(); }
 
 "auto"			{ count(); return(AUTO); }
@@ -107,9 +108,10 @@ L?\"(\\.|[^\\"])*\"	{ count(); return(STRING_LITERAL); }
 "^"			{ count(); return('^'); }
 "|"			{ count(); return('|'); }
 "?"			{ count(); return('?'); }
+"#"     { count(); return('#'); }
 
 [ \t\v\n\f]		{ count(); }
-.			{ /* ignore bad characters */ }
+.			{ count(); /* ignore bad characters */ }
 
 %%
 
@@ -118,14 +120,20 @@ yywrap()
 	return(1);
 }
 
+void singlecomment() {
+  char c;
+  while ((c = input()) != '\n' && c != 0);
+  unput(c);
+}
 
 comment()
 {
 	char c, c1;
 
 loop:
-	while ((c = input()) != '*' && c != 0)
-		putchar(c);
+	while ((c = input()) != '*' && c != 0) {
+    if (c == '\n') yylineno++;
+  }
 
 	if ((c1 = input()) != '/' && c != 0)
 	{
@@ -133,8 +141,7 @@ loop:
 		goto loop;
 	}
 
-	if (c != 0)
-		putchar(c1);
+	if (c != 0);
 }
 
 
@@ -149,7 +156,7 @@ void count()
 			column = 0;
       yylineno++;
     } else if (yytext[i] == '\t')
-			column += 8 - (column % 8);
+			column += 4 - (column % 4);
 		else
 			column++;
 /*
