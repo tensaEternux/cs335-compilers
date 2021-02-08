@@ -16,6 +16,7 @@ make
 ./bin/lexer ./test/test5.c
 make clean
 ```
+Note: Lex and Yacc required to build the binary.
 
 ### Usage
 `./bin/lexer -h` : Prints the help message
@@ -33,6 +34,6 @@ make clean
 ### Group Members
 
 * Udit Kumar Jareda (180830)
-* Vishwas Chaudhari (180876)
+* Vishwas Choudhary (180876)
 * Vivek Kumar Gupta (180880)
 * Yashwant Tailor (180894)
