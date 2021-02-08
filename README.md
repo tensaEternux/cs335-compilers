@@ -19,10 +19,15 @@ make clean
 
 ### Usage
 `./bin/lexer -h` : Prints the help message
+
 `./bin/lexer -v` : Prints the lexer version 
+
 `./bin/lexer ./test/test1.c` : Scans **test1.c** file and prints tokens on stdout in tabular form
+
 `./bin/lexer ./test/test2.c -o out1.txt`: Scans **test2.c** file and writes tokens in **out1.txt** file in tabular form
+
 `./bin/lexer ./test/test*.c -o out.txt`: Scans **test<1, 2, 3, 4, 5>.c** files and writes tokens in **out.txt** file in tabular form
+
 `./bin/lexer ./test/test*.c`: Scans **test<1, 2, 3, 4, 5>.c** files and prints tokens on stdout in tabular form
 
 ### Group Members
