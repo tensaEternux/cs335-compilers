@@ -2,7 +2,7 @@
 Compiler Design for the course [CS335](https://www.cse.iitk.ac.in/pages/CS335.html) at [IIT Kanpur](https://www.iitk.ac.in/).
 
  - Implementation Language (I): C
- - Target Language (T): X86
+ - Target Language (T): x86
  - Source Language (S): C
 
 ### Build and Run
