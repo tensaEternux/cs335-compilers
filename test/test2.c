@@ -9,12 +9,12 @@
  *
  * https://www.geeksforgeeks.org/combinatorial-game-theory-set-4-sprague-grundy-theorem/
  * */
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
+// #include <stdio.h>
+// #include <stdlib.h>
+// #include <time.h>
 
 // Maximum Number of Coins in a Pile
-#define maxP 10000
+// #define maxP 10000
 
 int N; // Number of piles
 int *piles;
@@ -37,7 +37,7 @@ int grundy( int x ) {
 
 int xor() {
     int x = 0;
-    for ( int i=0; i<N; i++ ) {
+    for (i=0; i<N; i++ ) {
         x = x ^ grundy(piles[i]);
     }
     return x;
@@ -47,14 +47,14 @@ int main()
 {
     scanf("%d", &N);
     piles = (int*)malloc(N * sizeof(int));
-    for ( int i=0; i<N; i++ ) {
+    for ( i=0; i<N; i++ ) {
         scanf("%d", &piles[i]);
     }
     data = (int*)malloc(maxP * sizeof(int));
     data[0] = 0;
     data[1] = 1;
     data[2] = 2;
-    for ( int i=2; i<maxP; i++ )
+    for (i=2; i<maxP; i++ )
         data[i] = -1;
     if ( xor() )
         printf("Player 1 wins\n");
