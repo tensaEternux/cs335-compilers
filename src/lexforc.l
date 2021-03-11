@@ -24,6 +24,7 @@ void comment();
 %%
 "//"      { singlecomment(); }
 "/*"			{ comment(); }
+"#"     {singlecomment(); }
 
 "auto"			{ yylval = terminal(yytext); count(); return(AUTO); }
 "break"			{ yylval = terminal(yytext); count(); return(BREAK); }
@@ -117,7 +118,6 @@ L?\"(\\.|[^\\"])*\"	{ yylval = terminal(yytext); count(); return(STRING_LITERAL)
 "^"			{ yylval = terminal(yytext); count(); return('^'); }
 "|"			{ yylval = terminal(yytext); count(); return('|'); }
 "?"			{ yylval = terminal(yytext); count(); return('?'); }
-"#"     { yylval = terminal(yytext); count(); return('#'); }
 
 [ \t\v\n\f]		{ count(); }
 .			{ count(); /* ignore bad characters */ }

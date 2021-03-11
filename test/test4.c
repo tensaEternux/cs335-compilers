@@ -1,10 +1,14 @@
 /* Captain Jack Sparrow
  * Convert Roman Numbers to Integers
  * */
-// #include <stdio.h>
-// #include <stdlib.h>
-// #include <stdbool.h>
-// #include <string.h>
+
+#include <stdio.h>
+
+#include <stdlib.h>
+
+#include <stdbool.h>
+
+#include <string.h>
 
 int char2int(char c) {
   switch (c) {
@@ -26,14 +30,14 @@ int char2int(char c) {
   } 
 }
 
-bool validateDigits(int digits[], int len) {
+int validateDigits(int digits[], int len) {
   // TODO: Validate digits
   // THe Decision is ambiguous
   // Subtractive form
   // Additive form
   // Irregular subtraction notation
   // etc...
-  return true;
+  return 0;
 }
 
 int roman2int(char roman[], int len) {
