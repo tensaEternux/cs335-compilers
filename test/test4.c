@@ -1,10 +1,10 @@
 /* Captain Jack Sparrow
  * Convert Roman Numbers to Integers
  * */
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <string.h>
+// #include <stdio.h>
+// #include <stdlib.h>
+// #include <stdbool.h>
+// #include <string.h>
 
 int char2int(char c) {
   switch (c) {
@@ -40,12 +40,12 @@ int roman2int(char roman[], int len) {
   if (len == 0) return 0;
   int res = 0;
   int digits[len];
-  for (int i = 0; i < len; i++) {
+  for (i = 0; i < len; i++) {
     digits[i] = char2int(roman[i]);
     if (digits[i] == 0) return -1;
   }
   if (!validateDigits(digits, len)) return -2;
-  for (int i = 0; i < len - 1; i++) {
+  for (i = 0; i < len - 1; i++) {
     res += digits[i] >= digits[i+1] ? digits[i] : -digits[i];
   }
   res += digits[len-1];

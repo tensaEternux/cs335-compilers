@@ -68,14 +68,11 @@ int main(int argc, char* argv[]) {
     outfile = fopen("out.dot", "w");
     printf("Output will be stored in out.dot file.\n");
   }
-  printf("Got1\n");
   // Graph begin
   fprintf(outfile, "digraph G {\n");
   fprintf(outfile, "\tordering=out;\n");
-  printf("Got2\n");
   // Inside
   yyparse();
-  printf("Got3\n");
   // Graph end
   fprintf(outfile, "}\n");
   fclose(outfile);
@@ -184,7 +181,7 @@ node *nonTerminal2(char *str,node *l,node *m, node *r) {
 }
 
 node *nonTerminalFourChild(char *str,node *a1,node *a2, node *a3, node*a4, char* op) {
-  printf("005 - start\n");
+  // printf("005 - start\n");
   node *n = (node*) malloc(sizeof(node));
   n->name = strdup(str);
   n->id = ++id_count;
@@ -293,7 +290,7 @@ node *nonTerminalSquareB(char *str, node *a) {
 }
 
 node *nonTerminalCurlyB(char *str, node *a) {
-  printf("010 - start\n");
+  // printf("010 - start\n");
   node *n = (node*) malloc(sizeof(node));
   n->name=strdup(str);
   n->id = ++id_count;

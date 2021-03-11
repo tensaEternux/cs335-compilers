@@ -22,7 +22,7 @@ extern int yylex();
 
 
 
-%start translation_unit
+%start program
 %%
 
 primary_expression
@@ -435,6 +435,9 @@ jump_statement
                           }
 	;
 
+program
+	: translation_unit           {printf("Accepted\n");$$=$1;}
+	
 translation_unit
 	: external_declaration                     {$$=$1;}
 	| translation_unit external_declaration    {$$ = nonTerminal("translation_unit", NULL, $1, $2);}
