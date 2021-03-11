@@ -9,12 +9,12 @@
  *
  * https://www.geeksforgeeks.org/combinatorial-game-theory-set-4-sprague-grundy-theorem/
  * */
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
+// #include <stdio.h>
+// #include <stdlib.h>
+// #include <time.h>
 
 // Maximum Number of Coins in a Pile
-#define maxP 10000
+// #define maxP 10000
 
 int N; // Number of piles
 int *piles;

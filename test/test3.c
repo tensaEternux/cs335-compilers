@@ -2,11 +2,11 @@
  * Convert Integer to Roman Number
  * TODO: Make it more algorithmic
  * */
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
+// #include <stdio.h>
+// #include <stdlib.h>
+// #include <stdbool.h>
 
-#define MAX 3999
+// #define MAX 3999
 
 char* digit2str(int n, int *len);
 
@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
   // printf("%d\n", power);
   while (num) {
     char* ttt = digit2str((num/power)*power, &tmp);
-    for (int i=0; i<tmp; i++) {
+    for (i=0; i<tmp; i++) {
       roman[pos++] = ttt[i];
     }
     num = num - (num/power)*power;

@@ -103,24 +103,24 @@ void printerror() {
 
 
 node *nonTerminal(char *str,char *op, node *l, node *r) {
-  printf("001 - start\n");
+  // printf("001 - start\n");
   node *n = (node*) malloc(sizeof(node));
   n->name = strdup(str);
   n->id = ++id_count;
   int op_id = ++id_count;
   char *op_str = op;
   if(op){
-    fprintf(outfile, "\t%lu [label=\"%s\"];\n", op_id, op_str);
+    fprintf(outfile, "\t%d [label=\"%s\"];\n", op_id, op_str);
   }
-  fprintf(outfile, "\t%lu [label=\"%s\"];\n", n->id, n->name);
-  if(l) fprintf(outfile, "\t%lu -> %lu;\n", n->id, l->id);
-  if(op) fprintf(outfile, "\t%lu -> %lu;\n", n->id, op_id);
-  if(r)fprintf(outfile, "\t%lu -> %lu;\n", n->id, r->id);
-  printf("001 - end\n");
+  fprintf(outfile, "\t%d [label=\"%s\"];\n", n->id, n->name);
+  if(l) fprintf(outfile, "\t%d -> %d;\n", n->id, l->id);
+  if(op) fprintf(outfile, "\t%d -> %d;\n", n->id, op_id);
+  if(r)fprintf(outfile, "\t%d -> %d;\n", n->id, r->id);
+  // printf("001 - end\n");
   return n;
 }
 node *nonTerminal1(char *str,char *op1, node *l,char *op2) {
-  printf("002 - start\n");
+  // printf("002 - start\n");
   node *n = (node*) malloc(sizeof(node));
   n->name = strdup(str);
   n->id = ++id_count;
@@ -129,21 +129,21 @@ node *nonTerminal1(char *str,char *op1, node *l,char *op2) {
   int op2_id = ++id_count;
   char *op2_str = op2;
   if(op1){
-    fprintf(outfile, "\t%lu [label=\"%s\"];\n", op1_id, op1_str);
+    fprintf(outfile, "\t%d [label=\"%s\"];\n", op1_id, op1_str);
   }
   if(op2){
     
-    fprintf(outfile, "\t%lu [label=\"%s\"];\n", op2_id, op2_str);
+    fprintf(outfile, "\t%d [label=\"%s\"];\n", op2_id, op2_str);
   }
-  fprintf(outfile, "\t%lu [label=\"%s\"];\n", n->id, n->name);
-  if(op1) fprintf(outfile, "\t%lu -> %lu;\n", n->id, op1_id);
-  if(l)fprintf(outfile, "\t%lu -> %lu;\n", n->id, l->id);
-  if(op2) fprintf(outfile, "\t%lu -> %lu;\n", n->id, op2_id);
-  printf("002 - end\n");
+  fprintf(outfile, "\t%d [label=\"%s\"];\n", n->id, n->name);
+  if(op1) fprintf(outfile, "\t%d -> %d;\n", n->id, op1_id);
+  if(l)fprintf(outfile, "\t%d -> %d;\n", n->id, l->id);
+  if(op2) fprintf(outfile, "\t%d -> %d;\n", n->id, op2_id);
+  // printf("002 - end\n");
   return n;
 }
 node *nonTerminal3(char *str,char *op1,char *op3, node *l,char *op2) {
-  printf("003 - start\n");
+  // printf("003 - start\n");
   node *n = (node*) malloc(sizeof(node));
   n->name = strdup(str);
   n->id = ++id_count;
@@ -154,32 +154,32 @@ node *nonTerminal3(char *str,char *op1,char *op3, node *l,char *op2) {
   int op2_id = ++id_count;
   char *op2_str = op2;
   if(op1){
-    fprintf(outfile, "\t%lu [label=\"%s\"];\n", op1_id, op1_str);
+    fprintf(outfile, "\t%d [label=\"%s\"];\n", op1_id, op1_str);
   }
   if(op3){
-    fprintf(outfile, "\t%lu [label=\"%s\"];\n", op3_id, op3_str);
+    fprintf(outfile, "\t%d [label=\"%s\"];\n", op3_id, op3_str);
   }
   if(op2){
-    fprintf(outfile, "\t%lu [label=\"%s\"];\n", op2_id, op2_str);
+    fprintf(outfile, "\t%d [label=\"%s\"];\n", op2_id, op2_str);
   }
-  fprintf(outfile, "\t%lu [label=\"%s\"];\n", n->id, n->name);
-  if(op1) fprintf(outfile, "\t%lu -> %lu;\n", n->id, op1_id);
-  if(op3) fprintf(outfile, "\t%lu -> %lu;\n", n->id, op3_id);
-  if(l)fprintf(outfile, "\t%lu -> %lu;\n", n->id, l->id);
-  if(op2) fprintf(outfile, "\t%lu -> %lu;\n", n->id, op2_id);
-  printf("003 - end\n");
+  fprintf(outfile, "\t%d [label=\"%s\"];\n", n->id, n->name);
+  if(op1) fprintf(outfile, "\t%d -> %d;\n", n->id, op1_id);
+  if(op3) fprintf(outfile, "\t%d -> %d;\n", n->id, op3_id);
+  if(l)fprintf(outfile, "\t%d -> %d;\n", n->id, l->id);
+  if(op2) fprintf(outfile, "\t%d -> %d;\n", n->id, op2_id);
+  // printf("003 - end\n");
   return n;
 }
 node *nonTerminal2(char *str,node *l,node *m, node *r) {
-  printf("004 - start\n");
+  // printf("004 - start\n");
   node *n = (node*) malloc(sizeof(node));
   n->name = strdup(str);
   n->id = ++id_count;
-  fprintf(outfile, "\t%lu [label=\"%s\"];\n", n->id, n->name);
-  if(l) fprintf(outfile, "\t%lu -> %lu;\n", n->id, l->id);
-  if(m) fprintf(outfile, "\t%lu -> %lu;\n", n->id, m->id);
-  if(r)fprintf(outfile, "\t%lu -> %lu;\n", n->id, r->id);
-  printf("004 - end\n");
+  fprintf(outfile, "\t%d [label=\"%s\"];\n", n->id, n->name);
+  if(l) fprintf(outfile, "\t%d -> %d;\n", n->id, l->id);
+  if(m) fprintf(outfile, "\t%d -> %d;\n", n->id, m->id);
+  if(r)fprintf(outfile, "\t%d -> %d;\n", n->id, r->id);
+  // printf("004 - end\n");
   return n;
 }
 
@@ -191,40 +191,40 @@ node *nonTerminalFourChild(char *str,node *a1,node *a2, node *a3, node*a4, char*
   int op_id = ++id_count;
   char *op_str = op;
   if(op){
-    fprintf(outfile,"\t%lu [label=\"%s\"];\n",op_id,op_str);
+    fprintf(outfile,"\t%d [label=\"%s\"];\n",op_id,op_str);
   }
-  fprintf(outfile, "\t%lu [label=\"%s\"];\n", n->id, n->name);
-  if(a1) fprintf(outfile, "\t%lu -> %lu;\n", n->id, a1->id);
-  if(a2) fprintf(outfile, "\t%lu -> %lu;\n", n->id, a2->id);
-  if(a3)fprintf(outfile, "\t%lu -> %lu;\n", n->id, a3->id);
-  if(a4) fprintf(outfile,"\t%lu -> %lu;\n",n->id,a4->id);
-  if(op) fprintf(outfile,"\t%lu -> %lu;\n",n->id,op_id);
-  printf("005 - end\n");
+  fprintf(outfile, "\t%d [label=\"%s\"];\n", n->id, n->name);
+  if(a1) fprintf(outfile, "\t%d -> %d;\n", n->id, a1->id);
+  if(a2) fprintf(outfile, "\t%d -> %d;\n", n->id, a2->id);
+  if(a3)fprintf(outfile, "\t%d -> %d;\n", n->id, a3->id);
+  if(a4) fprintf(outfile,"\t%d -> %d;\n",n->id,a4->id);
+  if(op) fprintf(outfile,"\t%d -> %d;\n",n->id,op_id);
+  // printf("005 - end\n");
   return n;
 }
 
 node *nonTerminalFiveChild(char *str,node *a1,node *a2, node *a3, node*a4, node* a5) {
-  printf("006 - start\n");
+  // printf("006 - start\n");
   node *n = (node*) malloc(sizeof(node));
   n->name = strdup(str);
   n->id = ++id_count;
-  fprintf(outfile, "\t%lu [label=\"%s\"];\n", n->id, n->name);
-  if(a1) fprintf(outfile, "\t%lu -> %lu;\n", n->id, a1->id);
-  if(a2) fprintf(outfile, "\t%lu -> %lu;\n", n->id, a2->id);
-  if(a3)fprintf(outfile, "\t%lu -> %lu;\n", n->id, a3->id);
-  if(a4) fprintf(outfile,"\t%lu -> %lu;\n",n->id,a4->id);
-  if(a5) fprintf(outfile,"\t%lu -> %lu;\n",n->id,a5->id);
-  printf("006 - end\n");
+  fprintf(outfile, "\t%d [label=\"%s\"];\n", n->id, n->name);
+  if(a1) fprintf(outfile, "\t%d -> %d;\n", n->id, a1->id);
+  if(a2) fprintf(outfile, "\t%d -> %d;\n", n->id, a2->id);
+  if(a3)fprintf(outfile, "\t%d -> %d;\n", n->id, a3->id);
+  if(a4) fprintf(outfile,"\t%d -> %d;\n",n->id,a4->id);
+  if(a5) fprintf(outfile,"\t%d -> %d;\n",n->id,a5->id);
+  // printf("006 - end\n");
   return n;
 }
 
 node *terminal(char *str) {
-  printf("007 - start\n");
+  // printf("007 - start\n");
   node *n = (node*) malloc(sizeof(node));
-  printf("T57 %s\n", str);
-  printf("%s\n", str);
+  // printf("T57 %s\n", str);
+  // printf("%s\n", str);
   int len = strlen(str);
-  printf("T69\n");
+  // printf("T69\n");
   n->id = ++id_count;
 
   char s[len+10];
@@ -245,40 +245,50 @@ node *terminal(char *str) {
   s[ptr] = '\0';
 
   n->name = strdup(s);
-  printf("T34\n");
+  // printf("T34\n");
   if (str[0] == '"') {
-    fprintf(outfile, "\t%lu [label=\"\\\"%s\\\"\"];\n", n->id, n->name);
+    fprintf(outfile, "\t%d [label=\"\\%s\\\"\"];\n", n->id, n->name);
   } else {
-    fprintf(outfile, "\t%lu [label=\"%s\"];\n", n->id, n->name);
+    fprintf(outfile, "\t%d [label=\"%s\"];\n", n->id, n->name);
   }
-  printf("007 - end\n");
+  // printf("007 - end\n");
   return n;
 }
 
 node *nonTerminalRoundB(char *str, node *a) {
-  printf("008 - start\n");
+  // printf("008 - start\n");
   node *n = (node*) malloc(sizeof(node));
   n->name=strdup(str);
   n->id = ++id_count;
-  fprintf(outfile, "\t%lu [label=\"%s\"];\n", n->id,n->name);
+  // fprintf(outfile, "\t%d [label=\"%s\"];\n", n->id,n->name);
+  if (n->name[0] == '"') {
+    fprintf(outfile, "\t%d [label=\"\\%s\\\"\"];\n", n->id, n->name);
+  } else {
+    fprintf(outfile, "\t%d [label=\"%s\"];\n", n->id, n->name);
+  }
   int newBracketId = ++id_count;
-  fprintf(outfile, "\t%lu [label=\"( )\"];\n", newBracketId);
-  if(a) fprintf(outfile, "\t%lu -> %lu;\n", n->id, a->id);
-  fprintf(outfile, "\t%lu -> %lu;\n", n->id, newBracketId);
-  printf("008 - end\n");
+  fprintf(outfile, "\t%d [label=\"( )\"];\n", newBracketId);
+  if(a) fprintf(outfile, "\t%d -> %d;\n", n->id, a->id);
+  fprintf(outfile, "\t%d -> %d;\n", n->id, newBracketId);
+  // printf("008 - end\n");
   return n;
 }
 node *nonTerminalSquareB(char *str, node *a) {
-  printf("009 - start\n");
+  // printf("009 - start\n");
   node *n = (node*) malloc(sizeof(node));
   n->name=strdup(str);
   n->id = ++id_count;
-  fprintf(outfile, "\t%lu [label=\"%s\"];\n", n->id,n->name);
+  // fprintf(outfile, "\t%d [label=\"%s\"];\n", n->id,n->name);
+  if (n->name[0] == '"') {
+    fprintf(outfile, "\t%d [label=\"\\%s\\\"\"];\n", n->id, n->name);
+  } else {
+    fprintf(outfile, "\t%d [label=\"%s\"];\n", n->id, n->name);
+  }
   int newBracketId = ++id_count;
-  fprintf(outfile, "\t%lu [label=\"[ ]\"];\n", newBracketId);
-  if(a) fprintf(outfile, "\t%lu -> %lu;\n", n->id, a->id);
-  fprintf(outfile, "\t%lu -> %lu;\n", n->id, newBracketId);
-  printf("009 - end\n");
+  fprintf(outfile, "\t%d [label=\"[ ]\"];\n", newBracketId);
+  if(a) fprintf(outfile, "\t%d -> %d;\n", n->id, a->id);
+  fprintf(outfile, "\t%d -> %d;\n", n->id, newBracketId);
+  // printf("009 - end\n");
   return n;
 }
 
@@ -287,11 +297,16 @@ node *nonTerminalCurlyB(char *str, node *a) {
   node *n = (node*) malloc(sizeof(node));
   n->name=strdup(str);
   n->id = ++id_count;
-  fprintf(outfile, "\t%lu [label=\"%s\"];\n", n->id,n->name);
+  // fprintf(outfile, "\t%d [label=\"%s\"];\n", n->id,n->name);
+  if (n->name[0] == '"') {
+    fprintf(outfile, "\t%d [label=\"\\%s\\\"\"];\n", n->id, n->name);
+  } else {
+    fprintf(outfile, "\t%d [label=\"%s\"];\n", n->id, n->name);
+  }
   int newBracketId = ++id_count;
-  fprintf(outfile, "\t%lu [label=\"{ }\"];\n", newBracketId);
-  if(a) fprintf(outfile, "\t%lu -> %lu;\n", n->id, a->id);
-  fprintf(outfile, "\t%lu -> %lu;\n", n->id, newBracketId);
-  printf("010 - end\n");
+  fprintf(outfile, "\t%d [label=\"{ }\"];\n", newBracketId);
+  if(a) fprintf(outfile, "\t%d -> %d;\n", n->id, a->id);
+  fprintf(outfile, "\t%d -> %d;\n", n->id, newBracketId);
+  // printf("010 - end\n");
   return n;
 }

@@ -15,7 +15,7 @@ bin/lexer: y.tab.h lex.yy.c
 	rm y.tab.h
 
 y.tab.h: src/lexforc.y
-	yacc -d src/lexforc.y
+	yacc -t -d -v src/lexforc.y
 
 lex.yy.c: src/lexforc.l
 	lex src/lexforc.l
