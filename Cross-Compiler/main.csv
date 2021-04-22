@@ -1,4 +1,0 @@
-Key,Type,Size,Offset,is_Initialized
-c,int,4,12 ,1
-b,int,4,8 ,1
-a,int*,8, 0, 0
