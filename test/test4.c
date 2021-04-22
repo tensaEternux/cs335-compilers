@@ -1,73 +1,29 @@
-/* Captain Jack Sparrow
- * Convert Roman Numbers to Integers
- * */
+/* C program for exponent series */ 
+/* taken from www.c4learn.com/c-programs/c-program-to-find-exponent-power-series.html */
+int bor = 12;
+int main() {
+   int n, count;
+   float x, term, sum;
+ 
+   printf("\nEnter value of x :");
+   scanf("%f", &x);
+ 
+   n = term = sum = count = 1;
+ 
+   while (n <= 100) {
 
-#include <stdio.h>
-
-#include <stdlib.h>
-
-#include <stdbool.h>
-
-#include <string.h>
-
-int char2int(char c) {
-  switch (c) {
-    case 'i':
-    case 'I': return 1;
-    case 'v':
-    case 'V': return 5;
-    case 'x':
-    case 'X': return 10;
-    case 'l':
-    case 'L': return 50;
-    case 'c':
-    case 'C': return 100;
-    case 'd':
-    case 'D': return 500;
-    case 'm':
-    case 'M': return 1000;
-    default: return 0;
-  } 
+      term = term *x / n;
+      sum = sum + term;
+      count = count + 1;
+       int u =1;
+      char *h;
+      if (term < ACCURACY)
+         n = 999;
+      else
+         n = n + 1;
+   }
+ 
+   printf("\nTerms = %d Sum = %f", count, sum);
+   return 0;
 }
 
-int validateDigits(int digits[], int len) {
-  // TODO: Validate digits
-  // THe Decision is ambiguous
-  // Subtractive form
-  // Additive form
-  // Irregular subtraction notation
-  // etc...
-  return 0;
-}
-
-int roman2int(char roman[], int len) {
-  if (len == 0) return 0;
-  int res = 0;
-  int digits[len];
-  for (i = 0; i < len; i++) {
-    digits[i] = char2int(roman[i]);
-    if (digits[i] == 0) return -1;
-  }
-  if (!validateDigits(digits, len)) return -2;
-  for (i = 0; i < len - 1; i++) {
-    res += digits[i] >= digits[i+1] ? digits[i] : -digits[i];
-  }
-  res += digits[len-1];
-  return res;
-}
-
-int main(int argc, char *argv[]) {
-  char roman[20];
-  scanf("%s", roman);
-  int len = strlen(roman);
-  // printf("%s, %d\n", roman, len);
-  int value = roman2int(roman, len);
-  if (value == -1) {
-    printf("Error: Contains Invalid Characters\n");
-  } else if (value == -2) {
-    printf("Error: Invalid Roman Number\n");
-  } else {
-    printf("%d\n", value);
-  }
-  return 0;
-}

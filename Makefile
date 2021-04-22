@@ -1,24 +1,37 @@
-all: bin/parser
+CC=g++ -ggdb3 -std=c++11 -w
+BIN=./bin
+SOURCE=./src
+INPUT=./test
+BUILD=./build
+OBJ=$(BUILD)/nodes.o     \
+		$(BUILD)/symTable.o\
+		$(BUILD)/typeCheck.o 
 
-bin/parser: y.tab.h lex.yy.c 
-	mkdir -p bin
-	gcc -Isrc/ src/parseforc.c lex.yy.c y.tab.c -o bin/parser
-	# rm lex.yy.c
-	# rm y.tab.c
-	# rm y.tab.h
+all: $(BIN)/parser
 
-bin/lexer: y.tab.h lex.yy.c 
-	mkdir -p bin
-	gcc -Isrc/ lex.yy.c src/lexforc.c -o bin/lexer
-	rm lex.yy.c
-	rm y.tab.c
-	rm y.tab.h
+# $(BIN)/compile: $(SOURCE)/compile $(BIN)/compiler
+# 	@mkdir -p $(BIN)
+# 	cp $< $@
 
-y.tab.h: src/lexforc.y
-	yacc -d  src/lexforc.y
+$(BIN)/parser: $(BUILD)/parse.tab.c $(BUILD)/lex.yy.c $(OBJ)
+	@mkdir -p $(BIN)
+	$(CC) $^ -o $@ -I$(BUILD) -I$(SOURCE)
 
-lex.yy.c: src/lexforc.l
-	lex src/lexforc.l
+$(BUILD)/parse.tab.c: $(SOURCE)/parse.y
+	@mkdir -p $(BUILD)
+	bison -d $^ -o $@
 
-clean:
-	rm -r bin/	
+$(BUILD)/lex.yy.c: $(SOURCE)/lexer.l
+	@mkdir -p $(BUILD)
+	lex -t $^ > $@
+
+$(BUILD)/%.o: $(SOURCE)/%.cpp
+	@mkdir -p $(BUILD)
+	$(CC) -c $^ -o $@ -I$(BUILD) -I$(SOURCE)
+
+%.png: %.gv
+	dot -Tpng $? -o $@
+
+clean : 
+	rm -rf $(BIN)  $(BUILD)
+	rm -f *.csv *.asm *.txt *.gv
