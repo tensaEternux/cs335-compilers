@@ -1,0 +1,8 @@
+main,
+printf,int
+printn,int
+prints,char*
+readFile,char*
+scanf,
+strlen,void*
+writeFile,char*,char*

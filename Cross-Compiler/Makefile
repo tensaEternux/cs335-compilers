@@ -4,17 +4,14 @@ SOURCE=./src
 INPUT=./test
 BUILD=./build
 OBJ=$(BUILD)/nodes.o     \
-		$(BUILD)/typeCheck.o \
-		$(BUILD)/symTable.o  \
-		$(BUILD)/3ac.o       \
-		$(BUILD)/codeGen.o   \
-		$(BUILD)/runTime.o
+		$(BUILD)/symTable.o\
+		$(BUILD)/typeCheck.o 
 
-all: $(BIN)/compile
+all: $(BIN)/compiler
 
-$(BIN)/compile: $(SOURCE)/compile $(BIN)/compiler
-	@mkdir -p $(BIN)
-	cp $< $@
+# $(BIN)/compile: $(SOURCE)/compile $(BIN)/compiler
+# 	@mkdir -p $(BIN)
+# 	cp $< $@
 
 $(BIN)/compiler: $(BUILD)/parse.tab.c $(BUILD)/lex.yy.c $(OBJ)
 	@mkdir -p $(BIN)
@@ -24,7 +21,7 @@ $(BUILD)/parse.tab.c: $(SOURCE)/parse.y
 	@mkdir -p $(BUILD)
 	bison -d $^ -o $@
 
-$(BUILD)/lex.yy.c: $(SOURCE)/scan.l
+$(BUILD)/lex.yy.c: $(SOURCE)/lexer.l
 	@mkdir -p $(BUILD)
 	lex -t $^ > $@
 

@@ -3,6 +3,7 @@
 #include <sstream>
 #include <list>
 #include <stdio.h>
+#include "3ac.h"
 
 using namespace std;
 
@@ -17,6 +18,16 @@ typedef struct {
   string name;
   string nodeType;
   string nodeKey;
+  //===============//
+//  string code;
+  qid place;
+  list<int> truelist;
+  list<int> nextlist;
+  list<int> falselist;
+  list<int> breaklist;
+  list<int> continuelist;
+  list<int> caselist;
+  //===============//
   int id;
 } node;
 
