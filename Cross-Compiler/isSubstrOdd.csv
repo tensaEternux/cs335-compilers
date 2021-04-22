@@ -1,5 +1,0 @@
-Key,Type,Size,Offset,is_Initialized
-lengthB,int,4,20 ,1
-lengthA,int,4,16 ,1
-b,char*,8, 8, 1
-a,char*,8, 0, 1
