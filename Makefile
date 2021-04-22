@@ -4,16 +4,13 @@ SOURCE=./src
 INPUT=./test
 BUILD=./build
 OBJ=$(BUILD)/nodes.o     \
-		$(BUILD)/symTable.o\
-		$(BUILD)/typeCheck.o 
+		$(BUILD)/typeCheck.o \
+		$(BUILD)/symTable.o  \
+		$(BUILD)/3ac.o       
 
-all: $(BIN)/parser
+all: $(BIN)/compiler
 
-# $(BIN)/compile: $(SOURCE)/compile $(BIN)/compiler
-# 	@mkdir -p $(BIN)
-# 	cp $< $@
-
-$(BIN)/parser: $(BUILD)/parse.tab.c $(BUILD)/lex.yy.c $(OBJ)
+$(BIN)/compiler: $(BUILD)/parse.tab.c $(BUILD)/lex.yy.c $(OBJ)
 	@mkdir -p $(BIN)
 	$(CC) $^ -o $@ -I$(BUILD) -I$(SOURCE)
 

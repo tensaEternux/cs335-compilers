@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <iostream>
 #include "nodes.h"
-#include "symTable.h"
 #include "parse.tab.h"
 void yyerror (char *,...);
 void get_int_info();

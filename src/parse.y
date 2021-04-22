@@ -18,7 +18,6 @@ int yylex(void);
 void yyerror(char *s,...);
 #include "typeCheck.h"
 #include "nodes.h"
-#include "symTable.h"
 
 
 FILE *digraph;
@@ -33,6 +32,7 @@ string funcType;
 int structCounter=0;
 string funcArguments;
 string currArguments;
+qid tempQid;
 int tempodd;
 int tempeven;
 %}
@@ -73,16 +73,17 @@ int tempeven;
 %right <str> '&' '=' '!' '~' ':' '?'
 
 %type <ptr> multiplicative_expression additive_expression cast_expression primary_expression expression assignment_expression postfix_expression unary_expression shift_expression relational_expression equality_expression and_expression exclusive_or_expression inclusive_or_expression logical_or_expression logical_and_expression conditional_expression constant_expression
-%type <ptr> constant string generic_selection enumeration_constant
+%type <ptr> constant string generic_selection enumeration_constant M1 M2 M3 M4 M5 M6 M7
 %type <ptr> generic_assoc_list generic_association type_name argument_expression_list initializer_list
 %type <ptr> unary_operator
 %type <ptr> declaration declaration_specifiers
 %type <ptr> init_declarator_list static_assert_declaration storage_class_specifier type_specifier function_specifier type_qualifier alignment_specifier
 %type <ptr> init_declarator declarator initializer atomic_type_specifier struct_or_union_specifier enum_specifier struct_or_union struct_declaration_list
-%type <ptr> struct_declaration specifier_qualifier_list struct_declarator_list struct_declarator enumerator_list enumerator pointer
+%type <ptr> struct_declaration specifier_qualifier_list struct_declarator_list struct_declarator enumerator_list enumerator  pointer
 %type <ptr> direct_declarator type_qualifier_list parameter_type_list identifier_list parameter_list parameter_declaration
 %type <ptr> abstract_declarator direct_abstract_declarator designation designator_list designator labeled_statement compound_statement expression_statement declaration_list
 %type <ptr> selection_statement iteration_statement jump_statement block_item_list block_item external_declaration translation_unit function_definition statement
+%type <number> M N GOTO_emit
 
 %%
 
@@ -95,6 +96,10 @@ primary_expression
                                          string key($1);
                                          $$->exprType = 3;
                                          $$->nodeKey = key;
+                                        //-----------3AC----------------------//
+                                         $$->place = pair<string,sEntry*>(key,lookup(key));
+                                         $$->nextlist={};
+                                      //----------------3AC--------------------//
                                     }
 				    else{ yyerror("Error: %s is not declared in this scope", $1);
                                       $$->nodeType = string("");}
@@ -115,6 +120,10 @@ constant
                                    $$->rVal = -5;
                                    $$->iVal = val;
                                    $$->exprType=5;
+                                //-----------3AC-------------------------//
+                                   $$->place = pair<string,sEntry*>($1->str,NULL);
+                                    $$->nextlist={};
+                                //-----------3AC-----------------------------//
 				   }
   | F_CONSTANT                    { long long val = (int) $1->rVal;
                                    $$=terminal($1->str);
@@ -124,9 +133,14 @@ constant
                                    $$->nodeType=as;
                                    $$->iVal = val;
                                    $$->exprType=5;
+                                 //--------------3AC-----------------------//
+                                   $$->place = pair<string,sEntry*>($1->str,NULL);
+                                    $$->nextlist={};
+                                 //-------------------3AC---------------------//
                                    }
   | ENUMERATION_CONSTANT           {$$=terminal($1);
                               $$->isInit=1;
+                              $$->place = pair<string,sEntry*>($1,NULL);
                              $$->nodeType=string("ENUMERATION_CONSTANT");}
   ;
 enumeration_constant    /* before it has been defined as such */
@@ -135,8 +149,18 @@ enumeration_constant    /* before it has been defined as such */
   ;
 
 string
-  : STRING_LITERAL                {$$=terminal($1); $$->nodeType = string("char*"); $$->isInit =1;}
-  | FUNC_NAME                     {$$=terminal($1); $$->nodeType = string(); $$->isInit=1;}
+  : STRING_LITERAL                {$$=terminal($1); $$->nodeType = string("char*"); $$->isInit =1;
+                                 //---------------3AC-------------------------------//
+                                  $$->place = pair<string,sEntry*>($1,NULL);
+                                    $$->nextlist={};
+                                 //--------------3AC------------------------------------//
+                                  }
+  | FUNC_NAME                     {$$=terminal($1); $$->nodeType = string(); $$->isInit=1;
+                                 //---------------3AC-------------------------------//
+                                  $$->place = pair<string,sEntry*>($1,NULL);
+                                    $$->nextlist={};
+                                 //--------------3AC------------------------------------//
+                                  }
   ;
 
 generic_selection
@@ -162,7 +186,19 @@ generic_association
 						char* s = postfixExpr($1->nodeType, 1);
 						if(s){string as(s);
 							$$->nodeType =as;
-              }
+                                                //---------------3AC-------------------------------//
+                                                 $$->place = getTmpSym($$->nodeType);
+                                                 //qid opT  = pair<string,sEntry*>("[]",NULL);
+                                                 // int k = emit(opT, $1->place, $3->place, $$->place, -1);
+                                                 $$->place.second->size = $3->place.second->offset;
+                                                 $$->place.second->offset = $1->place.second->offset;
+                                                 $$->place.second->is_init = -5;
+
+                                                 $$->nextlist = {};
+                                                 //backPatch($3->truelist, k);
+                                                 //backPatch($3->falselist, k);
+                                               //----------------3AC------------------------------------//
+						 }
 						else {
 						  yyerror("Error:  array indexed with more indices than its dimension ");
 						}
@@ -176,6 +212,13 @@ generic_association
 		  $$->nodeType =as;
                   if($1->exprType==3){
                         string funcArgs = funcArgList($1->nodeKey);
+                      //----------------------------3AC-------------------------------------------------//
+                         qid t = getTmpSym($$->nodeType);
+                        int k=emit(pair<string, sEntry*>("refParam", NULL), pair<string, sEntry*>("", NULL), pair<string, sEntry*>("", NULL), t, -1);
+                        int k1=emit(pair<string, sEntry*>("CALL", NULL), $1->place, pair<string, sEntry*>("1", NULL), t, -1);
+                        $$->nextlist ={};
+                        $$->place = t;
+                     //-------------------------3AC---------------------------------------//
                         if(!(funcArgs==string(""))) {
                             yyerror("Error:\'%s\' function call requires arguments to be passed \n     \'%s %s\( %s \)\'",($1->nodeKey).c_str(),($$->nodeType).c_str(),($1->nodeKey).c_str(),funcArgs.c_str());
                         }
@@ -227,7 +270,22 @@ generic_association
                                    break;
                           }else{ break; }
                   }
-    }
+                   //--------------------------3AC----------------------------------//
+                       unsigned fT=1;
+                       unsigned carg=1;
+                  while(fT!=-1){
+                          carg++;
+                          fT = currArguments.find_first_of(delim);
+                          if(fT==-1) typeA = currArguments; else{ typeA = currArguments.substr(0,fT); currArguments = currArguments.substr(fT+1);}
+
+                  }
+                  qid t = getTmpSym($$->nodeType);
+                  emit(pair<string, sEntry*>("refParam", NULL), pair<string, sEntry*>("", NULL), pair<string, sEntry*>("", NULL), t, -1);
+                  int k=emit(pair<string, sEntry*>("CALL", NULL), $1->place, pair<string, sEntry*>(to_string(carg), NULL), t, -1);
+                  $$->place = t;
+                  $$->nextlist ={};
+                  //----------------------------3AC-----------------------------------------//
+                 }
 
 	  }
 	  else {
@@ -268,6 +326,12 @@ generic_association
 		  string as(s);
 		  $$->nodeType =as;
       $$->iVal = $1->iVal +1;
+                  //------------------3AC------------//
+                  qid t1 = getTmpSym($$->nodeType);
+                  int k=  emit(pair<string, sEntry*>("++S", lookup("++")), $1->place, pair<string, sEntry*>("", NULL), t1, -1);
+                  $$->place = t1;
+                  $$->nextlist = {};
+                 //-----------------3AC-----------------//
 	  }
 	  else {
 		  yyerror("Error: Increment not defined for this type");
@@ -282,6 +346,12 @@ generic_association
 		  string as(s);
 		  $$->nodeType =as;
       $$->iVal = $1->iVal -1;
+                  //-----------------3AC-------------//
+                  qid t1 = getTmpSym($$->nodeType);
+                  int k=emit(pair<string, sEntry*>("--S", lookup("--")), $1->place, pair<string, sEntry*>("", NULL), t1, -1);
+                  $$->place = t1;
+                  $$->nextlist={};
+                  //--------------3AC-------------//
 	  }
 	  else {
 		  yyerror("Error: Decrement not defined for this type");
@@ -295,6 +365,12 @@ generic_association
 	  if(s){
 		  string as(s);
 		  $$->nodeType =as;
+                  //-----------3AC-----------------//
+                  $$->place = getTmpSym($$->nodeType);
+                  string t = "\(" + $$->nodeType + "\)";
+                  int k=emit(pair<string, sEntry*>(t, NULL), $5->place, pair<string, sEntry*>("", NULL), $$->place, -1);
+                  $$->nextlist={};
+                  //-----------3AC-----------------//
 	  }
 	  else {
 		  yyerror("Error: typecasting error");
@@ -308,6 +384,13 @@ generic_association
 	  if(s){
 		  string as(s);
 		  $$->nodeType =as;
+                 //----------3AC-----------------//
+                  qid t1 = getTmpSym($$->nodeType);
+                  string t = "\(" + $$->nodeType + "\)";
+                  int k=emit(pair<string, sEntry*>(t, NULL), $5->place, pair<string, sEntry*>(",", NULL), t1, -1);
+                  $$->nextlist = {};
+                  $$->place = t1;
+                 //-----------3AC----------------//
 	  }
 	  else {
 		  yyerror("Error: typecasting error");
@@ -321,6 +404,13 @@ argument_expression_list
 		$$ = $1;
 		if($1->isInit==1)$$->isInit = 1;
                 currArguments = $1->nodeType;
+                //----------------3AC------------//
+                if($$->place.second == NULL && $$->nodeType == "char*"){
+                  int k=emit(pair<string, sEntry*>("param", NULL), $$->place, pair<string, sEntry*>("", NULL), pair<string, sEntry*>("", NULL), -4);
+                }
+                else int k=emit(pair<string, sEntry*>("param", NULL), $$->place, pair<string, sEntry*>("", NULL), pair<string, sEntry*>("", NULL), -1);
+                $$->nextlist={};
+                //---------------3AC------------//
           }
   | argument_expression_list ',' assignment_expression
 	    {
@@ -330,6 +420,14 @@ argument_expression_list
 		$$->nodeType = as;
 		if($1->isInit == 1 && $3->isInit==1) $$->isInit=1;
                 currArguments = currArguments +string(",")+ $3->nodeType;
+             //-------3AC-------------//
+             if($3->place.second == NULL && $3->nodeType == "char*"){
+                  int k=emit(pair<string, sEntry*>("param", NULL), $3->place, pair<string, sEntry*>("", NULL), pair<string, sEntry*>("", NULL), -4);
+             }
+             else int k=emit(pair<string, sEntry*>("param", NULL), $3->place, pair<string, sEntry*>("", NULL), pair<string, sEntry*>("", NULL), -1);
+             $$->nextlist={};
+             //------3AC--------------//
+
               }
   ;
 
@@ -344,6 +442,14 @@ unary_expression
 		  string as(s);
 		  $$->nodeType =as;
       $$->iVal = $2->iVal +1;
+                  //===========3AC======================//
+                  qid t1 = getTmpSym($$->nodeType);
+                  int k = emit(pair<string, sEntry*>("++P", lookup("++")), $2->place, pair<string, sEntry*>("", NULL), t1, -1);
+                  $$->place = t1;
+                  $$->nextlist = {};
+              //    $$->code =  $2->code + '\n' +\
+                //         $$->nodeKey + string("= ") + "INC_OP" + string(" ") + $2->nodeKey;
+                  //====================================//
 	  }
 	  else {
 		  yyerror("Error: Increment not defined for this type");
@@ -359,6 +465,13 @@ unary_expression
 	  if(s){
 		  string as(s);
 		  $$->nodeType =as;
+                  //===========3AC======================//
+                  qid t1 = getTmpSym($$->nodeType);
+                  int k = emit(pair<string, sEntry*>("--P", lookup("--")), $2->place, pair<string, sEntry*>("", NULL), t1, -1);
+                  $$->place = t1;
+                  $$->nextlist={};
+
+                  //====================================//
 	  }
 	  else {
 		  yyerror("Error: Decrement not defined for this type");
@@ -373,35 +486,63 @@ unary_expression
 		if(a){
 		    string as(a);
 		    $$->nodeType= as;
-    }
+                  //===========3AC======================//
+                  qid t1 = getTmpSym($$->nodeType);
+                  int k = emit($1->place, $2->place, pair<string, sEntry*>("", NULL), t1, -1);
+                  $$->place = t1;
+                  $$->nextlist={};
+
+                  //====================================//
+		}
 		else{
 		    yyerror("Error: Type inconsistent with operator %s", $1->name.c_str());
 		}
  	}
   | SIZEOF unary_expression       {
                 $$=  nonTerminal($1, NULL,NULL, $2);
-		            $$->nodeType = string("int");
-		            $$->isInit=1;
-                }
+		$$->nodeType = string("int");
+		$$->isInit=1;
+                //===========3AC======================//
+                  qid t1 = getTmpSym($$->nodeType);
+                  int k = emit(pair<string, sEntry*>("SIZEOF", lookup("sizeof")), $2->place, pair<string, sEntry*>("", NULL), t1, -1);
+                  $$->place = t1;
+                  $$->nextlist={};
+
+                //====================================//
+                                   }
   | SIZEOF '(' type_name ')'   {
                 $$=  nonTerminal($1, NULL,NULL, $3);
-		            $$->nodeType = string("int");
-		            $$->isInit=1;
-              }
+		$$->nodeType = string("int");
+		$$->isInit=1;
+                //===========3AC======================//
+                  qid t1 = getTmpSym($$->nodeType);
+                  int k = emit(pair<string, sEntry*>("SIZEOF", lookup("sizeof")), $3->place, pair<string, sEntry*>("", NULL), t1, -1);
+                  $$->place = t1;
+                  $$->nextlist={};
+
+                //====================================//
+                                   }
   | ALIGNOF '(' type_name ')'   {
 		$$=  nonTerminal($1, NULL,NULL, $3);
 		$$->nodeType = string("int");
 		$$->isInit=1;
-       }
+                //===========3AC======================//
+                  qid t1 = getTmpSym($$->nodeType);
+                  int k= emit(pair<string, sEntry*>("ALIGNOF", lookup("_Alignof")), $3->place, pair<string, sEntry*>("", NULL), t1, -1);
+                  $$->nextlist={};
+                  $$->place = t1;
+
+                //====================================//
+                                   }
   ;
 
 unary_operator
-  : '&'      { $$ = terminal("&");}
-  | '*'      { $$ = terminal("*");}
-  | '+'      { $$ = terminal("+");}
-  | '-'      { $$ = terminal("-");}
-  | '~'      { $$ = terminal("~");}
-  | '!'      { $$ = terminal("!");}
+  : '&'      { $$ = terminal("&"); $$->place = pair<string, sEntry*>("&", lookup("&")); }
+  | '*'      { $$ = terminal("*"); $$->place = pair<string, sEntry*>("unary*", lookup("*")); }
+  | '+'      { $$ = terminal("+"); $$->place = pair<string, sEntry*>("unary+", lookup("+")); }
+  | '-'      { $$ = terminal("-"); $$->place = pair<string, sEntry*>("unary-", lookup("-")); }
+  | '~'      { $$ = terminal("~"); $$->place = pair<string, sEntry*>("~", lookup("~")); }
+  | '!'      { $$ = terminal("!"); $$->place = pair<string, sEntry*>("!", lookup("!")); }
   ;
 
 cast_expression
@@ -411,6 +552,15 @@ cast_expression
 			$$ = nonTerminal("cast_expression", NULL, $2, $4);
 			$$->nodeType = $2->nodeType;
                         if($4->isInit==1) $$->isInit=1;
+                        //=============3AC====================//
+                        qid t1 = getTmpSym($$->nodeType);
+                        string t = $4->nodeType+ "to" + $$->nodeType ;
+                        int k = emit(pair<string, sEntry*>(t, NULL), $4->place, pair<string, sEntry*>(",", NULL), t1, -1);
+                        $$->nextlist={};
+                        $$->place = t1;
+
+                        //====================================//
+
 		}
         ;
 
@@ -423,10 +573,36 @@ multiplicative_expression
                if(strcmp(a,"int")==0){
                  $$=nonTerminal("*int",NULL,$1,$3);
                  $$->nodeType = string("long long");
+                 //---------------3AC----------------//
+                  qid t1 = getTmpSym($$->nodeType);
+                  k=emit(pair<string, sEntry*>("*int", lookup("*")), $1->place, $3->place, t1, -1);
+                  $$->place = t1;
+                  $$->nextlist={};
+                //--------------3AC--------------------//
 	       }
                else if (strcmp(a, "float")==0){
                  $$=nonTerminal("*float",NULL,$1,$3);
                  $$->nodeType = string("long double");
+                 //-------------3AC---------------------//
+                  qid t1 = getTmpSym($$->nodeType);
+
+                  if(isInt($1->nodeType)){
+                        qid t2 = getTmpSym($$->nodeType);
+                        emit(pair<string, sEntry*>("inttoreal",NULL),$1->place,pair<string, sEntry*>("",NULL),t2,-1);
+                        k=emit(pair<string, sEntry*>("*real", lookup("*")), t2, $3->place, t1, -1);
+                  }
+                  else if(isInt($3->nodeType)){
+                        qid t2 = getTmpSym($$->nodeType);
+                        emit(pair<string, sEntry*>("inttoreal",NULL),$3->place,pair<string, sEntry*>("",NULL),t2,-1);
+                        k=emit(pair<string, sEntry*>("*real", lookup("*")), $1->place, t2, t1, -1);
+                  }
+                  else {
+
+                        k=emit(pair<string, sEntry*>("*real", lookup("*")), $1->place, $3->place, t1, -1);
+                  }
+                  $$->place = t1;
+                  $$->nextlist={};
+                //------------3AC-----------------------------//
                }
             }
             else{
@@ -443,10 +619,35 @@ multiplicative_expression
                 if(!strcmp(a,"int")){
                   $$=nonTerminal("/int",NULL,$1,$3);
                   $$->nodeType = string("long long");
+                  //---------------3AC----------------------//
+                  qid t1 = getTmpSym($$->nodeType);
+                  k = emit(pair<string, sEntry*>("/int", lookup("/")), $1->place, $3->place, t1, -1);
+                  $$->place = t1;
+                  $$->nextlist= {};
+                 //--------------3AC------------------------//
 	        }
 	        else if (!strcmp(a,"float")){
                   $$=nonTerminal("/float",NULL,$1,$3);
                   $$->nodeType = string("long double");
+                 //-------------3AC---------------------//
+                  qid t1 = getTmpSym($$->nodeType);
+
+                  if(isInt($1->nodeType)){
+                        qid t2 = getTmpSym($$->nodeType);
+                        emit(pair<string, sEntry*>("inttoreal",NULL),$1->place,pair<string, sEntry*>("",NULL),t2,-1);
+                        k=emit(pair<string, sEntry*>("/real", lookup("/")), t2, $3->place, t1, -1);
+                  }
+                  else if(isInt($3->nodeType)){
+                        qid t2 = getTmpSym($$->nodeType);
+                        emit(pair<string, sEntry*>("inttoreal",NULL),$3->place,pair<string, sEntry*>("",NULL),t2,-1);
+                        k=emit(pair<string, sEntry*>("/real", lookup("/")), $1->place, t2, t1, -1);
+                  }
+                  else {
+                        k=emit(pair<string, sEntry*>("/real", lookup("/")), $1->place, $3->place, t1, -1);
+                  }
+                  $$->place =t1;
+                  $$->nextlist={};
+                 //-------------------------------------------//
                 }
             }
             else{
@@ -461,6 +662,13 @@ multiplicative_expression
             char* a=multilplicativeExpr($1->nodeType, $3->nodeType, '/');
             if(!strcmp(a,"int")){
 		$$->nodeType= string("long long");
+                  //===========3AC======================//
+                  qid t1 = getTmpSym($$->nodeType);
+                  int k =emit(pair<string, sEntry*>("%", lookup("%")), $1->place, $3->place, t1, -1);
+                  $$->nextlist={};
+                  $$->place = t1;
+
+                  //====================================//
 	    }
 	    else {
 		yyerror("Error: Incompatible type for % operator");
@@ -485,6 +693,24 @@ additive_expression
                    if(!strcmp(a,"int")) $$->nodeType=string("long long");
                    else if(!strcmp(a,"real")) $$->nodeType=string("long double");
                    else $$->nodeType=as; // for imaginary and complex returns
+                  //===========3AC======================//
+                   qid t1 = getTmpSym($$->nodeType);
+                   if(isInt($1->nodeType) && isFloat($3->nodeType)){
+                        qid t2 = getTmpSym($$->nodeType);
+                        emit(pair<string, sEntry*>("inttoreal",NULL),$1->place,pair<string, sEntry*>("",NULL),t2,-1);
+                        emit(pair<string, sEntry*>(p, lookup("+")), t2, $3->place, t1, -1);
+                   }
+                   else if(isInt($3->nodeType) && isFloat($1->nodeType)){
+                        qid t2 = getTmpSym($$->nodeType);
+                        emit(pair<string, sEntry*>("inttoreal",NULL),$3->place,pair<string, sEntry*>("",NULL),t2,-1);
+                        emit(pair<string, sEntry*>(p, lookup("+")), $1->place, t2, t1, -1);
+                   }
+                   else {
+                        emit(pair<string, sEntry*>(p, lookup("+")), $1->place, $3->place, t1, -1);
+                   }
+                   $$->place = t1;
+                  $$->nextlist = {};
+                  //====================================//
                  }
                  else {
                        yyerror("Error: Incompatible type for + operator");
@@ -506,6 +732,24 @@ additive_expression
                    if(!strcmp(a,"int")) $$->nodeType=string("long long");
                    else if(!strcmp(a,"real")) $$->nodeType=string("long double");
 	           else $$->nodeType=as;   // for imaginary and complex returns
+                  //===========3AC======================//
+                   qid t1 = getTmpSym($$->nodeType);
+                   if(isInt($1->nodeType) && isFloat($3->nodeType)){
+                        qid t2 = getTmpSym($$->nodeType);
+                        emit(pair<string, sEntry*>("inttoreal",NULL),$1->place,pair<string, sEntry*>("",NULL),t2,-1);
+                        emit(pair<string, sEntry*>(p, lookup("-")), t2, $3->place, t1, -1);
+                   }
+                   else if(isInt($3->nodeType) && isFloat($1->nodeType)){
+                        qid t2 = getTmpSym($$->nodeType);
+                        emit(pair<string, sEntry*>("inttoreal",NULL),$3->place,pair<string, sEntry*>("",NULL),t2,-1);
+                        emit(pair<string, sEntry*>(p, lookup("-")), $1->place, t2, t1, -1);
+                   }
+                   else {
+                        emit(pair<string, sEntry*>(p, lookup("-")), $1->place, $3->place, t1, -1);
+                   }
+                   $$->place = t1;
+                   $$->nextlist = {};
+                  //====================================//
                  }
 		 else {
 			 yyerror("Error: Incompatible type for - operator");
@@ -522,6 +766,12 @@ shift_expression
                           $$ = nonTerminal2("<<", $1,NULL, $3);
                           char* a = shiftExpr($1->nodeType,$3->nodeType);                        if(a){
                             $$->nodeType = $1->nodeType;
+                         //===========3AC======================//
+                          qid t1 = getTmpSym($$->nodeType);
+                          int k = emit(pair<string, sEntry*>("LEFT_OP", lookup("<<")), $1->place, $3->place, t1, -1);
+                          $$->place = t1;
+                          $$->nextlist={};
+                        //====================================//
                            }
                        else{
                           yyerror("Error: Invalid operands to binary <<");
@@ -533,6 +783,12 @@ shift_expression
                        char* a = shiftExpr($1->nodeType,$3->nodeType);
                           if(a){
                                 $$->nodeType = $1->nodeType;
+                                //===========3AC======================//
+                                 qid t1 = getTmpSym($$->nodeType);
+                                 int k = emit(pair<string, sEntry*>("RIGHT_OP", lookup(">>")), $1->place, $3->place, t1, -1);
+                                 $$->place = t1;
+                                 $$->nextlist={};
+                                //====================================//
                                }
                         else{
                           yyerror("Error: Invalid operands to binary <<");
@@ -553,6 +809,12 @@ relational_expression
                         else if(!strcmp(a,"Bool")){
                         $$->nodeType = string("bool");
                        yyerror("Warning: comparison between pointer and integer");}
+                       //===========3AC======================//
+                        qid t1 = getTmpSym($$->nodeType);
+                        int k =  emit(pair<string, sEntry*>("<", lookup("<")), $1->place, $3->place, t1, -1);
+                        $$->place = t1;
+                        $$->nextlist={};
+                       //====================================//
                     }
                   else {
                          yyerror("Error: invalid operands to binary <");
@@ -567,6 +829,12 @@ relational_expression
                           else if(!strcmp(a,"Bool")){
                            $$->nodeType = string("bool");
                           yyerror("Warning: comparison between pointer and integer");}
+                         //===========3AC======================//
+                           qid t1 = getTmpSym($$->nodeType);
+                           int k = emit(pair<string, sEntry*>(">", lookup(">")), $1->place, $3->place, t1, -1);
+                           $$->place = t1;
+                           $$->nextlist = {};
+                       //====================================//
                     } else {
                          yyerror("Error: invalid operands to binary >");
                     }
@@ -581,6 +849,12 @@ relational_expression
                        else if(!strcmp(a,"Bool")){
                         $$->nodeType = string("bool");
                         yyerror("Warning: comparison between pointer and integer");}
+                         //===========3AC======================//
+                           qid t1 = getTmpSym($$->nodeType);
+                          int k= emit(pair<string, sEntry*>("LE_OP", lookup("<=")), $1->place, $3->place, t1, -1);
+                           $$->place = t1;
+                           $$->nextlist = {};
+                       //====================================//
                     }else {
                          yyerror("Error: invalid operands to binary <=");
                     }
@@ -594,6 +868,12 @@ relational_expression
                       else if(!strcmp(a,"Bool")){
                         $$->nodeType = string("bool");
                          yyerror("Warning: comparison between pointer and integer");}
+                         //===========3AC======================//
+                           qid t1 = getTmpSym($$->nodeType);
+                           int k = emit(pair<string, sEntry*>("GE_OP", lookup(">=")), $1->place, $3->place, t1, -1);
+                           $$->place = t1;
+                           $$->nextlist ={};
+                       //====================================//
                     }else {
                          yyerror("Error: invalid operands to binary >=");
                     }
@@ -610,6 +890,12 @@ equality_expression
                             yyerror("Warning: Comparision between pointer and Integer");
                             }
                             $$->nodeType = "bool";
+                         //===========3AC======================//
+                           qid t1 = getTmpSym($$->nodeType);
+                           int k = emit(pair<string, sEntry*>("EQ_OP", lookup("\=\=")), $1->place, $3->place, t1, -1);
+                           $$->place = t1;
+                           $$->nextlist = {};
+                       //====================================//
                     }
                    else{ yyerror("Error:Invalid operands to binary =="); }
                  if($1->isInit==1 && $3->isInit==3) $$->isInit=1;
@@ -621,6 +907,12 @@ equality_expression
                             yyerror("Warning: Comparision between pointer and Integer");
                             }
                             $$->nodeType = "bool";
+                         //===========3AC======================//
+                           qid t1 = getTmpSym($$->nodeType);
+                           int k = emit(pair<string, sEntry*>("NE_OP", lookup("!=")), $1->place, $3->place, t1, -1);
+                           $$->place = t1;
+                           $$->nextlist ={};
+                       //====================================//
                     }
                    else{ yyerror("Error:Invalid operands to binary !="); }
                  if($1->isInit==1 && $3->isInit==3) $$->isInit=1;
@@ -635,6 +927,12 @@ and_expression
                if(a){
                   if(!strcmp(a,"true")) { $$->nodeType = string("bool"); }
                   else{   $$->nodeType = string("long long");}
+                         //===========3AC======================//
+                           qid t1 = getTmpSym($$->nodeType);
+                           int k= emit(pair<string, sEntry*>("&", lookup("&")), $1->place, $3->place, t1, -1);
+                           $$->place = t1;
+                           $$->nextlist={};
+                       //====================================//
                }
                else {
                  yyerror("Error:Invalid operands to the binary &");
@@ -651,6 +949,12 @@ exclusive_or_expression
                if(a){
                   if(!strcmp(a,"true")) { $$->nodeType = string("bool"); }
                   else{   $$->nodeType = string("long long");}
+                         //===========3AC======================//
+                           qid t1 = getTmpSym($$->nodeType);
+                           int k = emit(pair<string, sEntry*>("^", lookup("^")), $1->place, $3->place, t1, -1);
+                           $$->place = t1;
+                           $$->nextlist={};
+                       //====================================//
                }
                else {
                  yyerror("Error:Invalid operands to the binary ^");
@@ -668,6 +972,12 @@ inclusive_or_expression
                if(a){
                   if(!strcmp(a,"true")) { $$->nodeType = string("bool"); }
                   else{   $$->nodeType = string("long long");}
+                         //===========3AC======================//
+                           qid t1 = getTmpSym($$->nodeType);
+                           int k =  emit(pair<string, sEntry*>("|", lookup("|")), $1->place, $3->place, t1, -1);
+                           $$->place = t1;
+                           $$->nextlist={};
+                       //====================================//
                }
                else {
                  yyerror("Error:Invalid operands to the binary |");
@@ -676,41 +986,132 @@ inclusive_or_expression
 
       }
   ;
+M1
+  : logical_and_expression AND_OP {
+                        if($1->truelist.begin()==$1->truelist.end()){
+                            int k = emit(pair<string, sEntry*>("GOTO", lookup("goto")),pair<string, sEntry*>("IF", lookup("if")), $1->place, pair<string, sEntry*>("", NULL ),0);
+                            int k1 = emit(pair<string, sEntry*>("GOTO", lookup("goto")),pair<string, sEntry*>("", NULL), pair<string, sEntry*>("", NULL), pair<string, sEntry*>("", NULL ),0);
+                            $1->truelist.push_back(k);
+                            $1->falselist.push_back(k1);
+
+                        }
+                        $$ = $1;
+  }
+  ;
+
+M
+ : %empty {
+           $$ = getNextIndex();
+ }
+ ;
 
 logical_and_expression
   : inclusive_or_expression { $$ = $1;}
-  |  logical_and_expression AND_OP inclusive_or_expression  {
+  |  M1 M  inclusive_or_expression  {
                           $$ = nonTerminal2("&&", $1,NULL, $3);
                         $$->nodeType == string("bool");
+                         //===========3AC======================//
+                            if($3->truelist.begin()==$3->truelist.end()){
+                                int k = emit(pair<string, sEntry*>("GOTO", lookup("goto")),pair<string, sEntry*>("IF", lookup("if")), $3->place, pair<string, sEntry*>("", NULL ),0);
+                                int k1 = emit(pair<string, sEntry*>("GOTO", lookup("goto")),pair<string, sEntry*>("", NULL), pair<string, sEntry*>("", NULL), pair<string, sEntry*>("", NULL ),0);
+                                $3->truelist.push_back(k);
+                                $3->falselist.push_back(k1);
+                        }
+                           backPatch($1->truelist,$2);
+                           $$->truelist = $3->truelist;
+                           $1->falselist.merge($3->falselist);
+                           $$->falselist = $1->falselist;
+                           $$->nextlist ={};
+                       //====================================//
                  if($1->isInit==1 && $3->isInit==3) $$->isInit=1;
                   }
   ;
 
-logical_or_expression
-  : logical_and_expression  { $$ = $1;}
-  | logical_or_expression OR_OP logical_and_expression  {
-                                $$ = nonTerminal2("||", $1,NULL, $3);
-                                if($1->isInit==1 && $3->isInit==3) $$->isInit=1;
-                                $$->nodeType == string("bool");
-                     }
+M2
+  : logical_or_expression OR_OP {
+                        if($1->truelist.begin()==$1->truelist.end()){
+                            int k = emit(pair<string, sEntry*>("GOTO", lookup("goto")),pair<string, sEntry*>("IF", lookup("if")), $1->place, pair<string, sEntry*>("", NULL ),0);
+                            int k1 = emit(pair<string, sEntry*>("GOTO", lookup("goto")),pair<string, sEntry*>("", NULL), pair<string, sEntry*>("", NULL), pair<string, sEntry*>("", NULL ),0);
+                            $1->truelist.push_back(k);
+                            $1->falselist.push_back(k1);
+
+                        }
+                        $$ = $1;
+  }
   ;
+
+logical_or_expression
+  : logical_and_expression  { $$ = $1; tempQid = $$->place;}
+  | M2 M logical_and_expression  {
+                                $$ = nonTerminal2("||", $1,NULL, $3);
+                 if($1->isInit==1 && $3->isInit==3) $$->isInit=1;
+                        $$->nodeType == string("bool");
+                         //===========3AC======================//
+                         if($3->truelist.begin()==$3->truelist.end()){
+                                int k = emit(pair<string, sEntry*>("GOTO", lookup("goto")),pair<string, sEntry*>("IF", lookup("if")), $3->place, pair<string, sEntry*>("", NULL ),0);
+                                int k1 = emit(pair<string, sEntry*>("GOTO", lookup("goto")),pair<string, sEntry*>("", NULL), pair<string, sEntry*>("", NULL), pair<string, sEntry*>("", NULL ),0);
+                                $3->truelist.push_back(k);
+                                $3->falselist.push_back(k1);
+                        }
+                         backPatch($1->falselist, $2);
+                         $$->falselist = $3->falselist;
+                         $1->truelist.merge($3->truelist);
+                         $$->truelist = $1->truelist;
+                         $$->nextlist = {};
+                        //====================================//
+                                                        }
+  ;
+
+
+M3
+  : logical_or_expression '?' {
+                        if($1->truelist.begin()==$1->truelist.end()){
+                            int k = emit(pair<string, sEntry*>("GOTO", lookup("goto")),pair<string, sEntry*>("IF", lookup("if")), $1->place, pair<string, sEntry*>("", NULL ),0);
+                            int k1 = emit(pair<string, sEntry*>("GOTO", lookup("goto")),pair<string, sEntry*>("", NULL), pair<string, sEntry*>("", NULL), pair<string, sEntry*>("", NULL ),0);
+                            $1->truelist.push_back(k);
+                            $1->falselist.push_back(k1);
+
+                        }
+                        $$ = $1;
+  }
+  ;
+
+N
+ : %empty {
+                emit(pair<string, sEntry*>("=", lookup("=")), pair<string, sEntry*>("", NULL), pair<string, sEntry*>("", NULL), pair<string, sEntry*>("", NULL), -1);
+                $$ = emit(pair<string, sEntry*>("GOTO", lookup("goto")), pair<string, sEntry*>("", NULL), pair<string, sEntry*>("", NULL), pair<string, sEntry*>("", NULL), 0);
+ }
+ ;
 
 conditional_expression
   : logical_or_expression  { $$ = $1;}
-  | logical_or_expression '?'  expression ':' conditional_expression  {
+  | M3 M  expression ':' N  conditional_expression  {
 
-            $$ = nonTerminal2("conditional_expression", $1, $3, $5);
+            $$ = nonTerminal2("conditional_expression", $1, $3, $6);
             $$->rVal = -11;
-            char* a = conditionalExpr($3->nodeType,$5->nodeType);
+            char* a = conditionalExpr($3->nodeType,$6->nodeType);
             if(a){
                  string as(a);
                  $$->nodeType = string("int");
+                 //--------------------3AC--------------------------//
+                    qid t = getTmpSym($$->nodeType);
+                    emit(pair<string, sEntry*>("=", lookup("=")), $6->place, pair<string, sEntry*>("", NULL), t, -1);
+                    int k = emit(pair<string, sEntry*>("GOTO", lookup("goto")), pair<string, sEntry*>("", NULL), pair<string, sEntry*>("", NULL), pair<string, sEntry*>("", NULL), 0);
+                     backPatch($1->truelist , $2);
+                     backPatch($1->falselist , $5+1);
+                     setId1($5-1 , $3->place);
+                     setResult($5-1 , t);
+                     $$->nextlist = $3->nextlist;
+                     $$->nextlist.push_back($5);
+                     $$->nextlist.push_back(k);
+                     $$->place = t;
+                 //--------------------------------------------------//
                  }
             else
                 {
                  yyerror("Error:Type mismatch in conditional expression");
                 }
-           if($1->isInit==1 && $3->isInit==1 && $5->isInit==1) $$->isInit=1;
+           if($1->isInit==1 && $3->isInit==1 && $6->isInit==1) $$->isInit=1;
 
           }
   ;
@@ -728,6 +1129,16 @@ assignment_expression
                     if(!strcmp(a,"warning")){ $$->nodeType = $1->nodeType;
                          yyerror("Warning: Assignment with incompatible pointer type");
                          }
+                      //-------------3AC------------------------------------//
+                      int k;
+		     if(!strcmp($2,"=") || !strcmp($2,"+=") || !strcmp($2,"-=") || !strcmp($2,"*=") || !strcmp($2,"/=")) k= assignmentExpression($2, $$->nodeType,$1->nodeType, $3->nodeType, $1->place, $3->place)	;
+		     else assignment2($2, $$->nodeType,$1->nodeType, $3->nodeType, $1->place, $3->place);
+                       $$->place = $1->place;
+
+                      backPatch($3->nextlist, k);
+                       
+                      
+                     //-------------------------------------------------------//
                     }
                 else{ yyerror("Error: Incompatible types when assigning type \'%s\' to \'%s\' ",($1->nodeType).c_str(),($3->nodeType).c_str()); }
      if($1->exprType==3){ if($3->isInit==1) update_isInit($1->nodeKey); }
@@ -770,8 +1181,12 @@ assignment_operator
 
 expression
   : assignment_expression    { $$ = $1;}
-  | expression ',' assignment_expression   {
-                 $$ = nonTerminal("expression",NULL, $1, $3); $$->nodeType = string("void");
+  | expression ',' M assignment_expression   {
+                 $$ = nonTerminal("expression",NULL, $1, $4); $$->nodeType = string("void");
+                 //--------------3AC--------------------//
+                    backPatch($1->nextlist,$3);
+                    $$->nextlist = $4->nextlist;
+                 //-------------------------------------//
                  }
   ;
 
@@ -781,7 +1196,11 @@ constant_expression
 
 declaration
   : declaration_specifiers ';'  { typeName=string("");}
-  | declaration_specifiers init_declarator_list ';'  { typeName=string(""); $$ = nonTerminal("declaration", NULL, $1, $2);}
+  | declaration_specifiers init_declarator_list ';'  { typeName=string(""); $$ = nonTerminal("declaration", NULL, $1, $2);
+                                                      //----------------3AC-----------------------//
+                                                        $$->nextlist = $2->nextlist;
+                                                      //-----------------------------------------//
+                                                     }
   | static_assert_declaration   { typeName=string("");$$ = $1;}
   ;
 
@@ -800,12 +1219,17 @@ declaration_specifiers
 
 init_declarator_list
   : init_declarator    { $$ = $1;}
-  | init_declarator_list ',' init_declarator  { $$ = nonTerminal("init_declaration_list",NULL, $1, $3);}
+  | init_declarator_list ',' M init_declarator  { $$ = nonTerminal("init_declaration_list",NULL, $1, $4);
+                                               //-----------3AC------------------//
+                                                 backPatch($1->nextlist, $3);
+                                                 $$->nextlist = $4->nextlist;
+                                               //--------------------------------//
+                                              }
   ;
 
 init_declarator
-  : declarator '=' initializer  {
-                $$ = nonTerminal("=", NULL, $1, $3);
+  : declarator '=' M initializer  {
+                $$ = nonTerminal("=", NULL, $1, $4);
                     if($1->exprType==1||$1->exprType==15){ char *t=new char();
                       strcpy(t,($1->nodeType).c_str());
                       char *key =new char();
@@ -815,8 +1239,22 @@ init_declarator
                 }else if($1->nodeType==string("void")){
                      yyerror("Error: Variable or field \'%s\' declared void",key);
                 }
-                else { if($$->exprType==15) { insertSymbol(*curr,key,t,($3->exprType*$1->iVal),0,1); }
+                else { if($$->exprType==15) { insertSymbol(*curr,key,t,($4->exprType*$1->iVal),0,1); }
                         insertSymbol(*curr,key,t,$1->size,0,1);
+                        //----------------- 3AC ------------------------//
+                             char *a = validAssign($1->nodeType, $4->nodeType);
+                             if(a){
+                                    if(strcmp(a,"true")){ yyerror("Warning: Invalid assignment of \'%s\' to \'%s\' ",$1->nodeType.c_str(),$4->nodeType.c_str()); }
+                  $1->place = pair<string, sEntry*>($1->nodeKey, lookup($1->nodeKey));
+		             assignmentExpression("=", $1->nodeType,$1->nodeType, $4->nodeType, $1->place, $4->place);
+                             $$->place = $1->place;
+                             backPatch($1->nextlist, $3);
+                             $$->nextlist = $4->nextlist;
+                              }
+                              else { yyerror("Error: Invalid assignment of \'%s\' to \'%s\' ",$1->nodeType.c_str(),$4->nodeType.c_str()); }
+                           $$->place = pair<string, sEntry*>($1->nodeKey, lookup($1->nodeKey));
+
+                        //-----------------------------------------------//
                      }
                 }
                }
@@ -831,27 +1269,28 @@ init_declarator
                   }else if($1->nodeType==string("void")){
                      yyerror("Error: Variable or field \'%s\' declared void",key);
                   }else {  insertSymbol(*curr,key,t,$1->size,0,0);}
+                           $$->place = pair<string, sEntry*>($1->nodeKey, lookup($1->nodeKey));
                      }
                }
   ;
 
 storage_class_specifier
-  : TYPEDEF   {   
+  : TYPEDEF   {   //typeName = typeName+string(" ")+string($1);
                   $$=terminal($1);
               }
-  | EXTERN    {   
+  | EXTERN    {   //typeName = typeName+string(" ")+string($1);
                   $$=terminal($1);
               }
-  | STATIC    {    
+  | STATIC    {    //typeName = typeName+string(" ")+string($1);
                   $$=terminal($1);
               }
-  | THREAD_LOCAL { 
+  | THREAD_LOCAL { //typeName = typeName+string(" ")+string($1);
                   $$=terminal($1);
               }
-  | AUTO      {    
+  | AUTO      {    //typeName = typeName+string(" ")+string($1);
                   $$=terminal($1);
               }
-  | REGISTER  {   
+  | REGISTER  {    //typeName = typeName+string(" ")+string($1);
                   $$=terminal($1);
               }
   ;
@@ -1072,18 +1511,33 @@ declarator
                if($2->exprType==2){ funcName = $2->nodeKey; funcType = $2->nodeType; }
                 char* a = new char();
                 strcpy(a,($$->nodeType).c_str());$$->size = getSize(a);
+                        //------------------3AC---------------------------------//
+                        $$->place = pair<string, sEntry*>($$->nodeKey, NULL);
+                        //-------------------------------------------------------//
          }
-	| direct_declarator {$$ = $1;if($1->exprType==2){ funcName=$1->nodeKey; funcType = $1->nodeType;}}
+	| direct_declarator {$$ = $1;if($1->exprType==2){ funcName=$1->nodeKey; funcType = $1->nodeType;
+
+                            }
+                        //------------------3AC---------------------------------//
+                        $$->place = pair<string, sEntry*>($$->nodeKey, NULL);
+                        //-------------------------------------------------------//
+          }
 	;
 
 direct_declarator
 	: IDENTIFIER{
                     $$=terminal($1);$$->exprType=1;$$->nodeKey=string($1);$$->nodeType=typeName; char* a =new char();
                 strcpy(a,typeName.c_str()); $$->size = getSize(a);
+                        //------------------3AC---------------------------------//
+                        $$->place = pair<string, sEntry*>($$->nodeKey, NULL);
+                        //-------------------------------------------------------//
 			   }
 	| '(' declarator ')' {$$ = $2;
                            if($2->exprType==1){ $$->exprType=1;
                                           $$->nodeKey=$2->nodeKey;
+                                        //------------------3AC---------------------------------//
+                                         $$->place = pair<string, sEntry*>($$->nodeKey, NULL);
+                                       //-------------------------------------------------------//
                                           $$->nodeType=$2->nodeType;}
                            }
 	| direct_declarator '[' ']' {$$ = nonTerminalSquareB("direct_declarator", $1);
@@ -1096,6 +1550,9 @@ direct_declarator
                           strcpy(a,($1->nodeType).c_str());
                           $$->exprType=15;
                           $$->iVal=getSize(a);
+                                  //------------------3AC---------------------------------//
+                                   $$->place = pair<string, sEntry*>($$->nodeKey, NULL);
+                                 //-------------------------------------------------------//
                                }
 	| direct_declarator '[' '*' ']' {$$ = nonTerminalFourChild("direct_declarator", $1, NULL, NULL, NULL, $3);
           if($1->exprType==1){ $$->exprType=1;
@@ -1105,6 +1562,9 @@ direct_declarator
                           char* a = new char();
                           strcpy(a,($$->nodeType).c_str());
                           $$->size = getSize(a);
+                        //------------------3AC---------------------------------//
+                        $$->place = pair<string, sEntry*>($$->nodeKey, NULL);
+                        //-------------------------------------------------------//
                             }
 	| direct_declarator '[' STATIC type_qualifier_list assignment_expression ']'{
 				temp = terminal($3);
@@ -1117,6 +1577,9 @@ direct_declarator
                  else { char* a = new char();
                         strcpy(a,($$->nodeType).c_str());
                         $$->size = getSize(a); }
+                        //------------------3AC---------------------------------//
+                        $$->place = pair<string, sEntry*>($$->nodeKey, NULL);
+                        //-------------------------------------------------------//
                           }
 	| direct_declarator '[' STATIC assignment_expression ']' {
 				temp = terminal($3);
@@ -1128,6 +1591,10 @@ direct_declarator
                  else { char* a = new char();
                         strcpy(a,($$->nodeType).c_str());
                         $$->size = getSize(a); }
+                        //------------------3AC---------------------------------//
+                        $$->place = pair<string, sEntry*>($$->nodeKey, NULL);
+                        //-------------------------------------------------------//
+
                           }
 	| direct_declarator '[' type_qualifier_list '*' ']' {$$ = nonTerminalFourChild("direct_declarator", $1, $3, NULL, NULL, $4);
           if($1->exprType==1){ $$->exprType=1;
@@ -1136,6 +1603,10 @@ direct_declarator
                           char* a = new char();
                           strcpy(a,($$->nodeType).c_str());
                           $$->size = getSize(a);
+                        //------------------3AC---------------------------------//
+                        $$->place = pair<string, sEntry*>($$->nodeKey, NULL);
+                        //-------------------------------------------------------//
+
          }
 	| direct_declarator '[' type_qualifier_list STATIC assignment_expression ']' {
 
@@ -1148,6 +1619,10 @@ direct_declarator
                  else { char* a = new char();
                         strcpy(a,($$->nodeType).c_str());
                         $$->size = getSize(a); }
+                        //------------------3AC---------------------------------//
+                        $$->place = pair<string, sEntry*>($$->nodeKey, NULL);
+                        //-------------------------------------------------------//
+
 }
 	| direct_declarator '[' type_qualifier_list assignment_expression ']'{$$ = nonTerminalFourChild("direct_declarator", $1, $3, $4, NULL, NULL);
           if($1->exprType==1){ $$->exprType=1;
@@ -1157,6 +1632,10 @@ direct_declarator
                  else { char* a = new char();
                         strcpy(a,($$->nodeType).c_str());
                         $$->size = getSize(a); }
+                        //------------------3AC---------------------------------//
+                        $$->place = pair<string, sEntry*>($$->nodeKey, NULL);
+                        //-------------------------------------------------------//
+
 }
 	| direct_declarator '[' type_qualifier_list ']' {$$ = nonTerminal("direct_declarator", NULL, $1, $3);
           if($1->exprType==1){ $$->exprType=1;
@@ -1166,6 +1645,10 @@ direct_declarator
                         strcpy(a,($$->nodeType).c_str());
                         $$->size = getSize(a);
            }
+                        //------------------3AC---------------------------------//
+                        $$->place = pair<string, sEntry*>($$->nodeKey, NULL);
+                        //-------------------------------------------------------//
+
          }
 	| direct_declarator '[' assignment_expression ']' {$$ = nonTerminal("direct_declarator", NULL, $1, $3);
          if($1->exprType==1){ $$->exprType=1;
@@ -1175,8 +1658,12 @@ direct_declarator
                  else { char* a = new char();
                         strcpy(a,($$->nodeType).c_str());
                         $$->size = getSize(a); }
+                        //------------------3AC---------------------------------//
+                        $$->place = pair<string, sEntry*>($$->nodeKey, NULL);
+                        //-------------------------------------------------------//
+
         }
-	| direct_declarator '(' E3 parameter_type_list ')' 
+	| direct_declarator '(' E3 parameter_type_list ')' M
          {
          $$ = nonTerminal("direct_declarator", NULL, $1, $4);
           if($1->exprType==1){ $$->nodeKey=$1->nodeKey;
@@ -1188,6 +1675,18 @@ direct_declarator
                         strcpy(a,($$->nodeType).c_str());
                         $$->size = getSize(a);
                            }
+                        //------------------3AC---------------------------------//
+                        $$->place = pair<string, sEntry*>($$->nodeKey, NULL);
+                        backPatch($4->nextlist, $6);
+                        if( !(($$->nodeKey == "odd" && tempodd == 0) || ($$->nodeKey == "even" && tempeven == 0)) ){string em =  "func " + $$->nodeKey+ " begin:";
+                        emit(pair<string , sEntry*>(em, NULL), pair<string , sEntry*>("", NULL),pair<string , sEntry*>("", NULL),pair<string , sEntry*>("", NULL),-2);}
+                        if($$->nodeKey == "odd" ){
+                           tempodd = 1;
+                        }
+                        if($$->nodeKey == "even" ){
+                           tempeven = 1;
+                        }
+                        //-------------------------------------------------------//
                }
 	| direct_declarator '(' E3 ')'
          {
@@ -1202,11 +1701,21 @@ direct_declarator
                          char* a = new char();
                         strcpy(a,($$->nodeType).c_str());
                         $$->size = getSize(a);
+                        //------------------3AC---------------------------------//
+                        $$->place = pair<string, sEntry*>($$->nodeKey, NULL);
+                        string em =  "func " + $$->nodeKey+ " begin:";
+                        emit(pair<string , sEntry*>(em, NULL), pair<string , sEntry*>("", NULL),pair<string , sEntry*>("", NULL),pair<string , sEntry*>("", NULL),-2);
+                        //-------------------------------------------------------//
                      }
 	| direct_declarator '(' E3 identifier_list ')' {$$ = nonTerminal("direct_declarator", NULL, $1, $4);
                          char* a = new char();
                         strcpy(a,($$->nodeType).c_str());
                         $$->size = getSize(a);
+                        //------------------3AC---------------------------------//
+                        $$->place = pair<string, sEntry*>($$->nodeKey, NULL);
+                        string em =  "func " + $$->nodeKey+ " begin:";
+                        emit(pair<string , sEntry*>(em, NULL), pair<string , sEntry*>("", NULL),pair<string , sEntry*>("", NULL),pair<string , sEntry*>("", NULL),-2);
+                        //-------------------------------------------------------//
           }
 	;
 
@@ -1235,17 +1744,24 @@ parameter_type_list
                                         funcArguments = funcArguments+string(",...");
 					temp = terminal($3);
 					$$=nonTerminal("parameter_type_list",NULL,$1,temp);
+                                        $$->nextlist=$1->nextlist;
 				      }
 	| parameter_list {$$=$1;}
 	;
 
 parameter_list
 	: parameter_declaration {$$=$1;}
-	| parameter_list ','  parameter_declaration {$$=nonTerminal("parameter_list",NULL,$1,$3);}
+	| parameter_list ',' M  parameter_declaration {$$=nonTerminal("parameter_list",NULL,$1,$4);
+                                                      //----------------3AC--------------//
+                                                       backPatch($1->nextlist,$3);
+                                                       $$->nextlist=$4->nextlist;
+                                                      //---------------------------------//
+                                                      }
 	;
 
 parameter_declaration
 	: declaration_specifiers declarator {typeName=string("");
+          //paramTable();
          if($2->exprType==1){ char *t=new char();
                      strcpy(t,($2->nodeType).c_str());
                      char *key =new char();
@@ -1255,6 +1771,8 @@ parameter_declaration
                 if(funcArguments==string(""))funcArguments=($2->nodeType);
                else funcArguments= funcArguments+string(",")+($2->nodeType);
                      }
+
+
          $$=nonTerminal("parameter_declaration",NULL,$1,$2);}
 	| declaration_specifiers abstract_declarator {typeName=string("");$$=nonTerminal("parameter_declaration",NULL,$1,$2);}
 	| declaration_specifiers {typeName=string("");$$=$1;}
@@ -1326,38 +1844,65 @@ direct_abstract_declarator
 initializer
 	: '{' initializer_list '}' {$$ = $2; $$->nodeType = $2->nodeType+string("*");
                                    }
-	| '{' initializer_list ',' '}' {$$ = nonTerminal("initializer", $3, $2 ,NULL); $$->nodeType = $2->nodeType+string("*");
-                                  $$->exprType =$2->exprType;}
+	| '{' initializer_list ',' '}' {$$ = nonTerminal("initializer", $3, $2 ,NULL); $$->nodeType = $2->nodeType+string("*"); $$->exprType =$2->exprType;
+                                     //--------------3AC--------------------//
+                                        $$->place = $2->place;
+                                        $$->nextlist = $2->nextlist;
+                                     //-------------------------------------//
+                                        }
 	| assignment_expression {$$ = $1;}
 	;
 
 initializer_list
-	: designation initializer {
-           $$ = nonTerminal("initializer_list", NULL, $1 ,$2);
-           $$->nodeType = $2->nodeType;
-           char* a =validAssign($1->nodeType,$2->nodeType);
+	: designation M initializer {
+           $$ = nonTerminal("initializer_list", NULL, $1 ,$3);
+           $$->nodeType = $3->nodeType;
+           char* a =validAssign($1->nodeType,$3->nodeType);
                if(a){
                     if(!strcmp(a,"true")){ ; }
                     if(!strcmp(a,"warning")){
                          yyerror("Warning: Assignment with incompatible pointer type");
                          }
                     }
-                else{ yyerror("Error: Incompatible types when assigning type \'%s\' to \'%s\' ",($1->nodeType).c_str(),($2->nodeType).c_str()); }
+                else{ yyerror("Error: Incompatible types when assigning type \'%s\' to \'%s\' ",($1->nodeType).c_str(),($3->nodeType).c_str()); }
            $$->exprType = 1;
+                                     //--------------3AC--------------------//
+                                        $$->place = $3->place;
+                                        backPatch($1->nextlist, $2);
+                                        $$->nextlist = $3->nextlist;
+                                     //-------------------------------------//
         }
 	| initializer {$$ = $1;$$->exprType=1;}
-	| initializer_list ',' designation initializer {
-          $$ = nonTerminal2("initializer_list", $1, $3 ,$4);
+	| initializer_list ',' M designation initializer {
+          $$ = nonTerminal2("initializer_list", $1, $4 ,$5);
           $$->nodeType = $1->nodeType;
-           char* a =validAssign($3->nodeType,$4->nodeType);
+           char* a =validAssign($4->nodeType,$5->nodeType);
                if(a){
                     if(!strcmp(a,"true")){ ; }
                     if(!strcmp(a,"warning")){ ;
                          yyerror("Warning: Assignment with incompatible pointer type");
                          }
                      }
-                else{ yyerror("Error: Incompatible types when assigning type \'%s\' to \'%s\' ",($3->nodeType).c_str(),($4->nodeType).c_str()); }
-            a =validAssign($1->nodeType,$4->nodeType);
+                else{ yyerror("Error: Incompatible types when assigning type \'%s\' to \'%s\' ",($4->nodeType).c_str(),($5->nodeType).c_str()); }
+            a =validAssign($1->nodeType,$5->nodeType);
+               if(a){
+                    if(!strcmp(a,"true")){ ; }
+                    if(!strcmp(a,"warning")){ ;
+                         yyerror("Warning: Assignment with incompatible pointer type");
+                         }
+                     }
+                else{ yyerror("Error: Incompatible types when initializing type \'%s\' to \'%s\' ",($1->nodeType).c_str(),($5->nodeType).c_str()); }
+
+            $$->exprType =$1->exprType+1;
+                                     //--------------3AC--------------------//
+                                        backPatch($1->nextlist, $3);
+                                        $$->nextlist = $5->nextlist;
+                                     //-------------------------------------//
+          }
+	| initializer_list ',' M  initializer {
+          $$ = nonTerminal("initializer_list", NULL, $1 ,$4);
+          $$->nodeType = $1->nodeType;
+           char* a =validAssign($1->nodeType,$4->nodeType);
                if(a){
                     if(!strcmp(a,"true")){ ; }
                     if(!strcmp(a,"warning")){ ;
@@ -1365,21 +1910,11 @@ initializer_list
                          }
                      }
                 else{ yyerror("Error: Incompatible types when initializing type \'%s\' to \'%s\' ",($1->nodeType).c_str(),($4->nodeType).c_str()); }
-
-            $$->exprType =$1->exprType+1;
-          }
-	| initializer_list ',' initializer {
-          $$ = nonTerminal("initializer_list", NULL, $1 ,$3);
-          $$->nodeType = $1->nodeType;
-           char* a =validAssign($1->nodeType,$3->nodeType);
-               if(a){
-                    if(!strcmp(a,"true")){ ; }
-                    if(!strcmp(a,"warning")){ ;
-                         yyerror("Warning: Assignment with incompatible pointer type");
-                         }
-                     }
-                else{ yyerror("Error: Incompatible types when initializing type \'%s\' to \'%s\' ",($1->nodeType).c_str(),($3->nodeType).c_str()); }
            $$->exprType = $1->exprType+1;
+                                     //--------------3AC--------------------//
+                                        backPatch($1->nextlist, $3);
+                                        $$->nextlist = $4->nextlist;
+                                     //-------------------------------------//
         }
 	;
 
@@ -1387,6 +1922,10 @@ designation
 	: designator_list '='  {
            $$ = nonTerminal("designation", "=", $1 ,NULL);
            $$->nodeType = $1->nodeType=1;
+           //--------3AC-------------//
+              $$->place= $1->place;
+              $$->nextlist=$1->nextlist;
+           //--------------------------//
            }
 	;
 
@@ -1419,19 +1958,58 @@ statement
         | iteration_statement  {$$ = $1;}
         | jump_statement  {$$ = $1;}
         ;
+M5
+  : CASE constant_expression ':' {
+                                  $$=$2;
+                                //-----------3AC--------------------//
+                                 qid t = getTmpSym("bool");
+                                 int k = emit(pair<string, sEntry*>("EQ_OP", lookup("\=\=")),pair<string, sEntry*>("", NULL), $2->place, t, -1);
+                                 int k1 = emit(pair<string, sEntry*>("GOTO", lookup("goto")),pair<string, sEntry*>("IF", lookup("if")), t, pair<string, sEntry*>("", NULL ),0);
+                                 int k2 = emit(pair<string, sEntry*>("GOTO", lookup("goto")),pair<string, sEntry*>("", NULL), pair<string, sEntry*>("", NULL), pair<string, sEntry*>("", NULL ),0);
+                                 $$->caselist.push_back(k);
+                                 $$->truelist.push_back(k1);
+                                 $$->falselist.push_back(k2);
+                               //-----------------------------------//
+
+
+   }
+  ;
 
 labeled_statement
-        : IDENTIFIER ':' statement {
+        : IDENTIFIER ':' M statement {
                                 temp = terminal($1);
-                                $$ = nonTerminal("labeled_statement", NULL, temp, $3);
+                                $$ = nonTerminal("labeled_statement", NULL, temp, $4);
+                                //===========3AC======================//
+                                 if(!gotoIndexStorage($1, $3)){
+                                     yyerror("ERROR:\'%s\' is already defined", $1);
+
+                                }  $$->nextlist = $4->nextlist;
+                                   $$->caselist = $4->caselist;
+                                   $$->continuelist = $4->continuelist;
+                                   $$->breaklist = $4->breaklist;
+                                //=====================================//
+
                            }
-        | CASE constant_expression ':' statement {
+        | M5 M statement {
                                 temp = terminal("case");
-                                $$ = nonTerminal2("labeled_statement", temp, $2, $4);
+                                $$ = nonTerminal2("labeled_statement", temp, $1, $3);
+                                //-----------3AC--------------------//
+                                  backPatch($1->truelist, $2);
+                                  $3->nextlist.merge($1->falselist);
+                                  $$->breaklist = $3->breaklist;
+                                  $$->nextlist = $3->nextlist;
+                                  $$->caselist = $1->caselist;
+                                  $$->continuelist=$3->continuelist;
+                               //-----------------------------------//
                            }
         | DEFAULT ':' statement {
                                 temp = terminal($1);
                                 $$ = nonTerminal("labeled_statement", NULL, temp, $3);
+                               //---------3AC-----------------------//
+                                 $$->breaklist= $3->breaklist;
+                                 $$->nextlist = $3->nextlist;
+                                 $$->continuelist=$3->continuelist;
+                               //----------------------------------//
                            }
         ;
 
@@ -1462,7 +2040,17 @@ E1
 
 block_item_list
 	: block_item  {$$ = $1;}
-	| block_item_list block_item  {$$ = nonTerminal("block_item_list", NULL, $1, $2);
+	| block_item_list M block_item  {$$ = nonTerminal("block_item_list", NULL, $1, $3);
+                                      //---------------3AC--------------------//
+                                         backPatch($1->nextlist, $2);
+                                         $$->nextlist = $3->nextlist;
+                                         $1->caselist.merge($3->caselist);
+                                         $$->caselist = $1->caselist;
+                                         $1->continuelist.merge($3->continuelist);
+                                         $1->breaklist.merge($3->breaklist);
+                                         $$->continuelist = $1->continuelist;
+                                         $$->breaklist = $1->breaklist;
+                                      //----------------------------------------//
                                       }
 	;
 
@@ -1477,36 +2065,165 @@ expression_statement
 	| expression ';' {$$ =  $1 ;}
 	;
 
+M4
+  :  IF '(' expression ')' {
+                        if($3->truelist.begin()==$3->truelist.end()){
+                            int k = emit(pair<string, sEntry*>("GOTO", lookup("goto")),pair<string, sEntry*>("IF", lookup("if")), $3->place, pair<string, sEntry*>("", NULL ),0);
+                            int k1 = emit(pair<string, sEntry*>("GOTO", lookup("goto")),pair<string, sEntry*>("", NULL), pair<string, sEntry*>("", NULL), pair<string, sEntry*>("", NULL ),0);
+                            $3->truelist.push_back(k);
+                            $3->falselist.push_back(k1);
+
+                        }
+                        $$ = $3;
+  }
+  ;
+
+GOTO_emit
+   : %empty {
+
+                           $$ = emit(pair<string, sEntry*>("GOTO", lookup("goto")),pair<string, sEntry*>("", NULL), pair<string, sEntry*>("", NULL), pair<string, sEntry*>("", NULL ),0);
+   }
+   ;
+
 selection_statement
-        : IF '(' expression ')' statement ELSE  statement {
-                                                           $$ = nonTerminal2("IF (expr) stmt ELSE stmt", $3, $5, $7);
+        : M4 M statement GOTO_emit ELSE M statement {
+                                                           $$ = nonTerminal2("IF (expr) stmt ELSE stmt", $1, $3, $7);
+                                                          //----------3AC---------------------//
+                                                            backPatch($1->truelist, $2);
+                                                            backPatch($1->falselist, $6);
+                                                            $3->nextlist.push_back($4);
+                                                            $3->nextlist.merge($7->nextlist);
+                                                            $$->nextlist=$3->nextlist;
+                                                            $3->breaklist.merge($7->breaklist);
+                                                            $$->breaklist = $3->breaklist;
+                                                            $3->continuelist.merge($7->continuelist);
+                                                            $$->continuelist = $3->continuelist;
+                                                         //-----------------------------------//
                                                          }
-        | IF '(' expression ')' statement {
-                                           $$ = nonTerminal2("IF (expr) stmt", NULL, $3, $5);
+        | M4 M statement {
+                                           $$ = nonTerminal2("IF (expr) stmt", NULL, $1, $3);
+                                           //---------------3AC-------------------//
+                                               backPatch($1->truelist, $2);
+                                               $3->nextlist.merge($1->falselist);
+                                               $$->nextlist= $3->nextlist;
+                                               $$->continuelist = $3->continuelist;
+                                               $$->breaklist = $3->breaklist;
+                                           //------------------------------------//
+
                                          }
         | SWITCH '(' expression ')' statement{
                                            $$ = nonTerminal2("SWITCH (expr) stmt", NULL, $3, $5);
+                                           //--------------3AC---------------------------//
+                                              setListId1($5->caselist, $3->place);
+                                              $5->nextlist.merge($5->breaklist);
+                                              $$->nextlist= $5->nextlist;
+                                              $$->continuelist= $5->continuelist;
+                                          //---------------------------------------------//
                                          }
         ;
 
+
+M6
+  :   expression  {
+                        if($1->truelist.begin()==$1->truelist.end()){
+                            int k = emit(pair<string, sEntry*>("GOTO", lookup("goto")),pair<string, sEntry*>("IF", lookup("if")), $1->place, pair<string, sEntry*>("", NULL ),0);
+                            int k1 = emit(pair<string, sEntry*>("GOTO", lookup("goto")),pair<string, sEntry*>("", NULL), pair<string, sEntry*>("", NULL), pair<string, sEntry*>("", NULL ),0);
+                            $1->truelist.push_back(k);
+                            $1->falselist.push_back(k1);
+
+                        }
+                        $$ = $1;
+  }
+  ;
+
+
+M7
+  :   expression_statement  {
+                        if($1->truelist.begin()==$1->truelist.end()){
+                            int k = emit(pair<string, sEntry*>("GOTO", lookup("goto")),pair<string, sEntry*>("IF", lookup("if")), $1->place, pair<string, sEntry*>("", NULL ),0);
+                            int k1 = emit(pair<string, sEntry*>("GOTO", lookup("goto")),pair<string, sEntry*>("", NULL), pair<string, sEntry*>("", NULL), pair<string, sEntry*>("", NULL ),0);
+                            $1->truelist.push_back(k);
+                            $1->falselist.push_back(k1);
+
+                        }
+                        $$ = $1;
+  }
+  ;
+
 iteration_statement
-        : WHILE '(' expression ')' statement {
-                                           $$ = nonTerminal2("WHILE (expr) stmt", NULL, $3, $5);
+        : WHILE '(' M M6 ')' M statement GOTO_emit {
+                                           $$ = nonTerminal2("WHILE (expr) stmt", NULL, $4, $7);
+                                           //-----------3AC------------------//
+                                             backPatch($4->truelist, $6);
+                                             $7->continuelist.push_back($8);
+                                             backPatch($7->continuelist, $3);
+                                             backPatch($7->nextlist, $3);
+                                             $$->nextlist = $4->falselist;
+                                             $$->nextlist.merge($7->breaklist);
+                                           //--------------------------------//
+
                                          }
-        | DO statement  WHILE '(' expression ')' ';'{
-                                                     $$ = nonTerminal2("DO stmt WHILE (expr)", NULL, $2, $5);
+        | DO M  statement  WHILE '(' M  M6 ')' ';'{
+                                                     $$ = nonTerminal2("DO stmt WHILE (expr)", NULL, $3, $7);
+                                                   //--------3AC-------------------------//
+                                                      backPatch($7->truelist, $2);
+                                                      backPatch($3->continuelist, $6);
+                                                      backPatch($3->nextlist, $6);
+                                                      $7->falselist.merge($3->breaklist);
+                                                      $$->nextlist = $7->falselist;
+                                                   //-----------------------------------//
                                                    }
-        | FOR '(' expression_statement expression_statement ')' statement {
-                                           $$ = nonTerminal2("FOR (expr_stmt expr_stmt) stmt", $3, $4, $6);
+        | FOR '(' expression_statement M M7 ')' M statement GOTO_emit  {
+                                           $$ = nonTerminal2("FOR (expr_stmt expr_stmt) stmt", $3, $5, $8);
+                                           //-------------3AC-------------------//
+                                             backPatch($3->nextlist, $4);
+                                             backPatch($5->truelist, $7);
+                                             $5->falselist.merge($8->breaklist);
+                                             $$->nextlist = $5->falselist;
+                                             $8->nextlist.merge($8->continuelist);
+                                             $8->nextlist.push_back($9);
+                                             backPatch($8->nextlist, $4 );
+                                          //------------------------------------//
                                          }
-        | FOR '(' expression_statement expression_statement expression ')' statement {
-                                           $$ = nonTerminalFiveChild("FOR (expr_stmt expr_stmt expr) stmt", NULL, $3, $4, $5, $7);
+        | FOR '(' expression_statement M M7 M expression GOTO_emit ')' M statement GOTO_emit {
+                                           $$ = nonTerminalFiveChild("FOR (expr_stmt expr_stmt expr) stmt", NULL, $3, $5, $7, $11);
+                                           //-------------3AC-------------------//
+                                             backPatch($3->nextlist, $4);
+                                             backPatch($5->truelist, $10);
+                                             $5->falselist.merge($11->breaklist);
+                                             $$->nextlist = $5->falselist;
+                                             $11->nextlist.merge($11->continuelist);
+                                             $11->nextlist.push_back($12);
+                                             backPatch($11->nextlist, $6 );
+                                             $7->nextlist.push_back($8);
+                                             backPatch($7->nextlist, $4);
+                                          //------------------------------------//
                                          }
-        | FOR '(' declaration expression_statement ')' statement {
-                                           $$ = nonTerminal2("FOR ( decl expr_stm ) stmt", $3, $4, $6);
+        | FOR '(' declaration M M7 ')' M statement GOTO_emit  {
+                                           $$ = nonTerminal2("FOR ( decl expr_stm ) stmt", $3, $5, $8);
+                                           //-------------3AC-------------------//
+                                             backPatch($3->nextlist, $4);
+                                             backPatch($5->truelist, $7);
+                                             $5->falselist.merge($8->breaklist);
+                                             $$->nextlist = $5->falselist;
+                                             $8->nextlist.merge($8->continuelist);
+                                             $8->nextlist.push_back($9);
+                                             backPatch($8->nextlist, $4 );
+                                          //------------------------------------//
                                          }
-        | FOR '(' declaration expression_statement expression ')'  statement {
-                                           $$ = nonTerminalFiveChild("FOR ( decl expr_stmt expr ) stmt", NULL, $3, $4, $5, $7);
+        | FOR '(' declaration M M7 M expression GOTO_emit ')' M  statement GOTO_emit {
+                                           $$ = nonTerminalFiveChild("FOR ( decl expr_stmt expr ) stmt", NULL, $3, $5, $7, $11);
+                                           //-------------3AC-------------------//
+                                             backPatch($3->nextlist, $4);
+                                             backPatch($5->truelist, $10);
+                                             $5->falselist.merge($11->breaklist);
+                                             $$->nextlist = $5->falselist;
+                                             $11->nextlist.merge($11->continuelist);
+                                             $11->nextlist.push_back($12);
+                                             backPatch($11->nextlist, $6 );
+                                             $7->nextlist.push_back($8);
+                                             backPatch($7->nextlist, $4);
+                                          //------------------------------------//
                                          }
         ;
 
@@ -1515,26 +2232,51 @@ jump_statement
                                 temp = terminal($1);
                                 temp1 = terminal($2);
                                 $$ = nonTerminal("jump_statement", NULL, temp, temp1);
+                                //-----------3AC---------------------//
+                                 int k = emit(pair<string, sEntry*>("GOTO", lookup("goto")),pair<string, sEntry*>("", NULL), pair<string, sEntry*>("", NULL), pair<string, sEntry*>("", NULL ),0);
+                                 gotoIndexPatchListStorage($2, k);
+                                //-----------------------------------//
                               }
         | CONTINUE ';'        {
                                 $$ = terminal("continue");
+                                //-----------3AC---------------------//
+                                 int k = emit(pair<string, sEntry*>("GOTO", lookup("goto")),pair<string, sEntry*>("", NULL), pair<string, sEntry*>("", NULL), pair<string, sEntry*>("", NULL ),0);
+                                 $$->continuelist.push_back(k);
+                               //-----------------------------------//
                               }
         | BREAK ';'           {
                                 $$ = terminal("break");
+                                //-----------3AC---------------------//
+                                 int k = emit(pair<string, sEntry*>("GOTO", lookup("goto")),pair<string, sEntry*>("", NULL), pair<string, sEntry*>("", NULL), pair<string, sEntry*>("", NULL ),0);
+                                 $$->breaklist.push_back(k);
+                               //-----------------------------------//
+
                               }
         | RETURN ';'          {
                                 $$ = terminal("return");
+                              //------------3AC----------------//
+
+                                  emit(pair<string, sEntry*>("RETURN", lookup("return")),pair<string, sEntry*>("", NULL), pair<string, sEntry*>("", NULL), pair<string, sEntry*>("", NULL ),-1);
+                              //------------------------------//
                               }
         | RETURN expression ';' {
                                   temp = terminal("return");
                                     $$ = nonTerminal("jump_statement", NULL, temp, $2);
+                              //------------3AC----------------//
+
+                                  emit(pair<string, sEntry*>("RETURN", lookup("return")), $2->place, pair<string, sEntry*>("", NULL), pair<string, sEntry*>("", NULL ),-1);
+                              //------------------------------//
                                 }
         ;
 
 
 translation_unit
 	: external_declaration  {$$ = $1;}
-	| translation_unit external_declaration  {$$ = nonTerminal("translation_unit", NULL, $1, $2);
+	| translation_unit M external_declaration  {$$ = nonTerminal("translation_unit", NULL, $1, $3);
+                                                   //----------3Ac----------------//
+                                                      backPatch($1->nextlist, $2);
+                                                      $$->nextlist = $3->nextlist;
+                                                   //------------------------------//
                                                    }
 	;
 
@@ -1552,6 +2294,10 @@ function_definition
                 symNumber=0;
                updateSymTable(s);
                 $$ = nonTerminalFourChild("function_definition", $1, $2, $4, $5, NULL);
+               //--------------------3AC--------------------------------//
+                        if($5->rVal != -5){ string em =  "func end";
+                        emit(pair<string , sEntry*>(em, NULL), pair<string , sEntry*>("", NULL),pair<string , sEntry*>("", NULL),pair<string , sEntry*>("", NULL),-3);}
+               //------------------------------------------------------//
          }
 	| declaration_specifiers declarator E2 compound_statement  {
               typeName=string("");
@@ -1560,6 +2306,10 @@ function_definition
               symNumber=0;
               updateSymTable(s);
               $$ = nonTerminal2("function_definition", $1, $2, $4);
+               //--------------------3AC--------------------------------//
+                if($4->rVal != -5){string em =  "func end";
+                emit(pair<string , sEntry*>(em, NULL), pair<string , sEntry*>("", NULL),pair<string , sEntry*>("", NULL),pair<string , sEntry*>("", NULL),-3); }
+               //------------------------------------------------------//
              }
 	;
 
@@ -1577,7 +2327,11 @@ E2
 
 declaration_list
 	: declaration {$$ = $1;}
-	| declaration_list declaration {$$ = nonTerminal("declaration_list", NULL, $1, $2);
+	| declaration_list M declaration {$$ = nonTerminal("declaration_list", NULL, $1, $3);
+                           //--------3AC--------------//
+                             backPatch($1->nextlist, $2);
+                             $$->nextlist = $3->nextlist;
+                          //--------------------------//
           }
 	;
 
@@ -1636,7 +2390,7 @@ int main(int argc,char **argv){
   }
   char ch;
   funcName = string("GST");
-  duplicate = fopen("inputused.txt","w");
+  duplicate = fopen("input_used.txt","w");
   while( ( ch = fgetc(yyin) ) != EOF ){
         fputc(ch, duplicate);
   }
@@ -1649,8 +2403,13 @@ int main(int argc,char **argv){
   currArguments = string("");
   stInitialize();
   graphInitialization();
-  yyparse();
+  yyparse(); 
+  char* gotoError = backPatchGoto();
+ if(gotoError)
+    yyerror("ERROR: '\%s'\ label used but not defined\n", gotoError);
+
   graphEnd();
+  display3ac();
   symFileName = "GST.csv";
   printSymTables(curr,symFileName);
   printFuncArguments();
@@ -1668,7 +2427,7 @@ va_start(args,s);
 int count = 1;
   if(s=="syntax error") count = 2;
   fprintf(stderr,"%s : %d :: %s\n",filename,yylineno,buffer);
-  duplicate=fopen("inputused.txt","r");
+  duplicate=fopen("input_used.txt","r");
   if ( duplicate != NULL )
   {
     char line[256]; /* or other suitable maximum line size */
