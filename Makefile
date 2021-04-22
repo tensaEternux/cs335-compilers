@@ -6,7 +6,9 @@ BUILD=./build
 OBJ=$(BUILD)/nodes.o     \
 		$(BUILD)/typeCheck.o \
 		$(BUILD)/symTable.o  \
-		$(BUILD)/3ac.o       
+		$(BUILD)/3ac.o       \
+		$(BUILD)/codeGen.o   \
+		$(BUILD)/runTime.o
 
 all: $(BIN)/compiler
 

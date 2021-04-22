@@ -17,7 +17,7 @@ int blockSym=0;
 int yylex(void);
 void yyerror(char *s,...);
 #include "typeCheck.h"
-#include "nodes.h"
+#include "codeGen.h"
 
 
 FILE *digraph;
@@ -79,7 +79,7 @@ int tempeven;
 %type <ptr> declaration declaration_specifiers
 %type <ptr> init_declarator_list static_assert_declaration storage_class_specifier type_specifier function_specifier type_qualifier alignment_specifier
 %type <ptr> init_declarator declarator initializer atomic_type_specifier struct_or_union_specifier enum_specifier struct_or_union struct_declaration_list
-%type <ptr> struct_declaration specifier_qualifier_list struct_declarator_list struct_declarator enumerator_list enumerator  pointer
+%type <ptr> struct_declaration specifier_qualifier_list struct_declarator_list struct_declarator enumerator_list enumerator pointer
 %type <ptr> direct_declarator type_qualifier_list parameter_type_list identifier_list parameter_list parameter_declaration
 %type <ptr> abstract_declarator direct_abstract_declarator designation designator_list designator labeled_statement compound_statement expression_statement declaration_list
 %type <ptr> selection_statement iteration_statement jump_statement block_item_list block_item external_declaration translation_unit function_definition statement
@@ -2403,13 +2403,16 @@ int main(int argc,char **argv){
   currArguments = string("");
   stInitialize();
   graphInitialization();
-  yyparse(); 
+  yyparse();
   char* gotoError = backPatchGoto();
  if(gotoError)
     yyerror("ERROR: '\%s'\ label used but not defined\n", gotoError);
 
-  graphEnd();
+graphEnd();
   display3ac();
+  resetRegister();
+  generateCode();
+  printCode();
   symFileName = "GST.csv";
   printSymTables(curr,symFileName);
   printFuncArguments();
