@@ -2,7 +2,7 @@ CS335 - Compiler Design
 
 Compiler Design for the course CS335 at IIT Kanpur.
 
-    Implementation Language (I): C
+    Implementation Language (I): C++
     Target Language (T): x86
     Source Language (S): C
 
@@ -12,6 +12,7 @@ cd .
 make
 ./bin/lexer ./test/test1.c          //for lexer
 ./bin/parser ./test/test1.c         //for parser
+./bin/compiler -i ./test/test1.c -o test.gv  //for compiler
 make clean
 
 Note: Lex and Yacc required to build the binary.

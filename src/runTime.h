@@ -13,7 +13,6 @@ extern string currFunction;
 
 void addLine(string a);
 void printCode();
-void printCodeFunc(string a);
 void resetRegister();
 string getNextReg(qid temporary);
 string checkTemporaryInReg(string t);

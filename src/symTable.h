@@ -12,11 +12,9 @@ enum symTable_types{
 	S_FILE,S_BLOCK,S_FUNC,S_PROTO
 };
 
-// symbol table entry data structure
 typedef struct sTableEntry{
     string type;
     int is_init;
- //   void *value;
     ull size;
     ll offset;
 } sEntry;
@@ -46,7 +44,6 @@ void addKeywords();
 void update_isInit(string key);
 void makeSymTable(string name,int type,string funcType);
 void insertFuncArguments(string a,string b);
-//void updateKey(string key,void *val);
 void updateSymTable(string key);
 sEntry* lookup(string a);
 sEntry* scopeLookup(string a);
