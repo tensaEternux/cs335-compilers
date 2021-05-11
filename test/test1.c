@@ -25,7 +25,7 @@ int isSubstrOdd(char *a, char* b, int lengthA, int lengthB){
   } 
 }
 
-int main(int argc){
+int main(){
   int t; 
  // scanf("%d", &t);
   while (t--){
