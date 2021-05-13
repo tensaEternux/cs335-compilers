@@ -362,7 +362,7 @@ generic_association
 	  $$=  nonTerminal("postfix_expression", NULL, $2, $5);
           if($5->isInit==1) $$->isInit =1;
 	  char* s = postfixExpr($2->nodeType, 8);
-	  if(s){
+	  if(s){ 
 		  string as(s);
 		  $$->nodeType =as;
                   //-----------3AC-----------------//
@@ -550,7 +550,8 @@ cast_expression
         | '(' type_name ')' cast_expression
 		{
 			$$ = nonTerminal("cast_expression", NULL, $2, $4);
-			$$->nodeType = $2->nodeType;
+			$$->nodeType = typeName;
+      typeName="";
                         if($4->isInit==1) $$->isInit=1;
                         //=============3AC====================//
                         qid t1 = getTmpSym($$->nodeType);
@@ -1218,8 +1219,8 @@ declaration_specifiers
   ;
 
 init_declarator_list
-  : init_declarator    { $$ = $1;}
-  | init_declarator_list ',' M init_declarator  { $$ = nonTerminal("init_declaration_list",NULL, $1, $4);
+  : init_declarator    {typeName=""; $$ = $1;}
+  | init_declarator_list ',' M init_declarator  { typeName="";$$ = nonTerminal("init_declaration_list",NULL, $1, $4);
                                                //-----------3AC------------------//
                                                  backPatch($1->nextlist, $3);
                                                  $$->nextlist = $4->nextlist;
@@ -1526,11 +1527,12 @@ declarator
 
 direct_declarator
 	: IDENTIFIER{
-                    $$=terminal($1);$$->exprType=1;$$->nodeKey=string($1);$$->nodeType=typeName; char* a =new char();
+                    $$=terminal($1);$$->exprType=1;$$->nodeKey=string($1);$$->nodeType=typeName;char* a =new char();
                 strcpy(a,typeName.c_str()); $$->size = getSize(a);
                         //------------------3AC---------------------------------//
                         $$->place = pair<string, sEntry*>($$->nodeKey, NULL);
                         //-------------------------------------------------------//
+                         typeName="";
 			   }
 	| '(' declarator ')' {$$ = $2;
                            if($2->exprType==1){ $$->exprType=1;

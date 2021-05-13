@@ -10,8 +10,6 @@ int main(){
 
   int k;
   int j = k1+k2+k3;
-  
-   
 
 a:
   return 0;

@@ -12,12 +12,12 @@ int main(){
   int a=10;
   int b;
   b--;
-  int k =(int) a;
-
-  f();
-  int f = g(a,b);
-  int q[10];
-  q[1] = a;
-  int a = k<2 ? 4: 6 ;
+  char k = (char)a;
+  // int k;
+  // f();
+  // int f = g(a,b);
+  // int q[10];
+  // q[1] = a;
+  // int a = k<2 ? 4: 6 ;
   
 }
