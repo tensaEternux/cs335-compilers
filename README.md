@@ -10,9 +10,7 @@ Build and Run
 
 cd .
 make
-./bin/lexer ./test/test1.c          //for lexer
-./bin/parser ./test/test1.c         //for parser
-./bin/compiler -i ./test/test1.c -o test.gv  //for compiler
+./bin/compiler -i ./test/test1.c -o test.gv
 make clean
 
 Note: Lex and Yacc required to build the binary.
@@ -21,20 +19,8 @@ To generate postscript graph of the c code, execute the following command after 
 
 Note: graphviz required to generate postscript graph.
 Usage
+bin/compiler -i test/test1.c -o output.gv
 
-./bin/lexer -h : Prints the help message
-
-./bin/lexer -v : Prints the lexer version
-
-./bin/lexer ./test/test1.c : Scans test1.c file and prints tokens on stdout in tabular form
-
-./bin/lexer ./test/test2.c -o out1.txt: Scans test2.c file and writes tokens in out1.txt file in tabular form
-
-./bin/lexer ./test/test*.c -o out.txt: Scans test<1, 2, 3, 4, 5>.c files and writes tokens in out.txt file in tabular form
-
-./bin/lexer ./test/test*.c: Scans test<1, 2, 3, 4, 5>.c files and prints tokens on stdout in tabular form
-
-./bin/parser ./test/test*.c: Executes parser on test files and generates out.dot file.
 Group Members
 
     Udit Kumar Jareda (180830)
