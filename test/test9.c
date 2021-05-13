@@ -11,8 +11,10 @@ struct node {
 
 int main(){
   int a = 10;
-  struct node d;
   int b,c;
+  struct node d;
+  struct node* x = &d;
+  b = x->a;
   int j = d.a;
 return 1;
   }

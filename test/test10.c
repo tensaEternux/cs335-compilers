@@ -1,5 +1,5 @@
 int f (int arg1, int arg2, int arg3, int arg4, int ){
-  printf(a);i
+  printf(a);
   printf(b);
   printf(c);
   printf(d);
@@ -21,6 +21,7 @@ int main(){
   int e = 5;
   int fa = f(a,b,c, d, e, a);
   printf(fa);
+  printf("Hello %d" ,c);
   return 0;
 
 }

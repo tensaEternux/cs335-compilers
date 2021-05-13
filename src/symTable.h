@@ -60,3 +60,4 @@ void makeStructTable();
 int structLookup(string structName, string idStruct);
 bool isStruct(string structName);
 string structMemberType(string structName, string idT);
+sEntry* getStruct(string structName, string key);

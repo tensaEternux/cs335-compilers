@@ -302,6 +302,7 @@ generic_association
                                                 else if(k==2) yyerror("Error: \'%s\' is not a member of struct \'%s\'", $3,$1->nodeKey.c_str() );
                                                 else $$->nodeType = structMemberType($1->nodeType, as);
                                                 $$->nodeKey = $1->nodeKey+ string(".") + as;
+                                                $$->place = getTmpSym($$->nodeType);
                                             }
   | postfix_expression PTR_OP IDENTIFIER    {
                                                 temp=terminal($3);
@@ -309,13 +310,14 @@ generic_association
                                                 string as($3);
                                                 string as1 = ($1->nodeType).substr(0,($1->nodeType).length()-1);
                                                 int k = structLookup(as1, as);
-                                                cout<<k<<endl;
                                                 if(k==1){ yyerror("Error: \'%s\' is an invalid operator on \'%s\'", $2, $1->nodeKey.c_str() );
                                                 }
                                                 else if(k==2){ yyerror("Error: \'%s\' is not a member of struct \'%s\'", $3,$1->nodeKey.c_str() );
                                                 }
                                                 else $$->nodeType = structMemberType(as1, as);
                                                 $$->nodeKey = $1->nodeKey+ string("->") + as;
+                                                $$->place = getTmpSym($$->nodeType);
+
                                             }
   | postfix_expression INC_OP               {
 
@@ -550,8 +552,9 @@ cast_expression
         | '(' type_name ')' cast_expression
 		{
 			$$ = nonTerminal("cast_expression", NULL, $2, $4);
-			$$->nodeType = typeName;
-      typeName="";
+      $$->nodeType = "int";
+      typeName ="";
+
                         if($4->isInit==1) $$->isInit=1;
                         //=============3AC====================//
                         qid t1 = getTmpSym($$->nodeType);
@@ -1219,8 +1222,8 @@ declaration_specifiers
   ;
 
 init_declarator_list
-  : init_declarator    {typeName=""; $$ = $1;}
-  | init_declarator_list ',' M init_declarator  { typeName="";$$ = nonTerminal("init_declaration_list",NULL, $1, $4);
+  : init_declarator    {$$ = $1;}
+  | init_declarator_list ',' M init_declarator  {$$ = nonTerminal("init_declaration_list",NULL, $1, $4);
                                                //-----------3AC------------------//
                                                  backPatch($1->nextlist, $3);
                                                  $$->nextlist = $4->nextlist;
@@ -1532,7 +1535,6 @@ direct_declarator
                         //------------------3AC---------------------------------//
                         $$->place = pair<string, sEntry*>($$->nodeKey, NULL);
                         //-------------------------------------------------------//
-                         typeName="";
 			   }
 	| '(' declarator ')' {$$ = $2;
                            if($2->exprType==1){ $$->exprType=1;

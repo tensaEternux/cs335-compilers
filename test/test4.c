@@ -1,6 +1,7 @@
 /* C program for exponent series */ 
 /* taken from www.c4learn.com/c-programs/c-program-to-find-exponent-power-series.html */
 int bor = 12;
+float ACCURACY = 0.001;
 int main() {
    int n, count;
    float x, term, sum;

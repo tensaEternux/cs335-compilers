@@ -62,6 +62,11 @@ int structLookup(string structName, string idStruct) {
   else if ((*toStructTable[structName]).count(idStruct)!=1) return 2;
   return 0;
 }
+sEntry* getStruct(string structName, string key){
+  sEntry* x = (*toStructTable[structName])[key];
+  cout<<x->type<<endl;
+  return x;
+}
 
 void switchItemMap() {
   statusMap.insert(make_pair<int, string>(1,"iVal"));
@@ -95,10 +100,13 @@ void stInitialize() {
   curr = &GST;
   is_next = 0;
   addKeywords();
+  funcArgumentMap.insert(pair<string,string>(string("sin"),string("int")));
+  funcArgumentMap.insert(pair<string,string>(string("cos"),string("int")));
+  funcArgumentMap.insert(pair<string,string>(string("atoi"),string("char*")));
   funcArgumentMap.insert(pair<string,string>(string("printn"),string("int")));
-  funcArgumentMap.insert(pair<string,string>(string("printf"),string("int")));
+  funcArgumentMap.insert(pair<string,string>(string("printf"),string("...")));
   funcArgumentMap.insert(pair<string,string>(string("prints"),string("char*")));
-  funcArgumentMap.insert(pair<string,string>(string("scanf"),string("")));
+  funcArgumentMap.insert(pair<string,string>(string("scanf"),string("...")));
   funcArgumentMap.insert(pair<string,string>(string("strlen"),string("void*")));
   funcArgumentMap.insert(pair<string,string>(string("readFile"),string("char*")));
   funcArgumentMap.insert(pair<string,string>(string("writeFile"),string("char*,char*")));

@@ -3,7 +3,7 @@ CS335 - Compiler Design
 Compiler Design for the course CS335 at IIT Kanpur.
 
     Implementation Language (I): C++
-    Target Language (T): x86
+    Target Language (T): MIPS
     Source Language (S): C
 
 Build and Run

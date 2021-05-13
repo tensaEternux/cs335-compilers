@@ -37,7 +37,7 @@ WS  [ \t\v\n\f]
 %%
 "/*"                    {startComment();/*consuming all the characters of comment */}
 "//".*                  {/* Consume the comment */}
-
+"#".*           {/* Consume hash define and includes */}
 "auto"					{ yylval.str=strdup(yytext); return(AUTO); }
 "break"					{ yylval.str=strdup(yytext);return(BREAK); }
 "case"					{ yylval.str=strdup(yytext);return(CASE); }
